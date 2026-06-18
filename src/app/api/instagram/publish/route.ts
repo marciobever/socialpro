@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 interface SlidePayload {
   imageUrl: string; // data:image/png;base64,... or https URL
@@ -23,13 +23,13 @@ async function uploadImageToStorage(
 
   const path = `${userId}/${Date.now()}-slide-${index}.png`;
 
-  const { error } = await supabase.storage
+  const { error } = await getSupabase().storage
     .from("carousel-images")
     .upload(path, buffer, { contentType: "image/png", upsert: true });
 
   if (error) throw new Error(`Upload falhou: ${error.message}`);
 
-  const { data } = supabase.storage.from("carousel-images").getPublicUrl(path);
+  const { data } = getSupabase().storage.from("carousel-images").getPublicUrl(path);
   return data.publicUrl;
 }
 
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   const userId = session.user.email;
 
   // Get Meta credentials from Supabase
-  const { data: conn } = await supabase
+  const { data: conn } = await getSupabase()
     .from("social_connections")
     .select("access_token, instagram_account_id, token_expires_at")
     .eq("user_id", userId)

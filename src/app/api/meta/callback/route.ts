@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 5. Salva/atualiza no Supabase
-    const { error: dbError } = await supabase
+    const { error: dbError } = await getSupabase()
       .from("social_connections")
       .upsert(
         {
