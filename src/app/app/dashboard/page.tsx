@@ -1,0 +1,582 @@
+"use client";
+import React from 'react';
+import { useAppContext } from '@/context/AppContext';
+import { CarouselCard } from '@/components/cards/CarouselCard';
+import { TextPostCard } from '@/components/cards/TextPostCard';
+import { Linkedin, Twitter, Instagram } from '@/components/icons';
+import type { PlatformType, Slide, CarouselStyleModel } from '@/types';
+import {
+  Copy, Check, Loader2, Send, X, Info, Clock,
+  Download, Plus, RefreshCw, ImageIcon, Wand2, ExternalLink,
+} from 'lucide-react';
+
+// ─── Style definitions ───────────────────────────────────────────────────────
+
+const PHOTO_STYLES: { id: CarouselStyleModel; name: string; swatch: string }[] = [
+  { id: 'lifestyle',  name: 'Lifestyle', swatch: 'linear-gradient(135deg,#d97706,#1c1713)' },
+  { id: 'tech',       name: 'Cyber',     swatch: 'linear-gradient(135deg,#8b5cf6,#06b6d4)' },
+  { id: 'alert',      name: 'Alerta',    swatch: 'linear-gradient(135deg,#7f1d1d,#f59e0b)' },
+  { id: 'minimalist', name: 'Minimal',   swatch: 'linear-gradient(135deg,#0b0c10,#374151)' },
+  { id: 'feminino',   name: 'Feminino',  swatch: 'linear-gradient(135deg,#f43f5e,#ec4899,#f9a8d4)' },
+  { id: 'neutro',     name: 'Neutro',    swatch: 'linear-gradient(135deg,#d4b896,#f5f0e8,#c9a87a)' },
+  { id: 'retro',      name: 'Retrô',     swatch: 'linear-gradient(135deg,#92400e,#b45309,#fbbf24)' },
+];
+
+const AVATAR_STYLES: { id: CarouselStyleModel; name: string; swatch: string }[] = [
+  { id: 'infantil',   name: 'Infantil',  swatch: 'linear-gradient(135deg,#fb923c,#facc15,#4ade80)' },
+  { id: 'pixar',      name: '3D Pixar',  swatch: 'linear-gradient(135deg,#60a5fa,#a78bfa,#f472b6)' },
+  { id: 'anime',      name: 'Anime',     swatch: 'linear-gradient(135deg,#f472b6,#fb923c,#facc15)' },
+  { id: 'aquarela',   name: 'Aquarela',  swatch: 'linear-gradient(135deg,#7dd3fc,#86efac,#fde68a)' },
+  { id: 'flat',       name: 'Flat Art',  swatch: 'linear-gradient(135deg,#10b981,#3b82f6,#8b5cf6)' },
+  { id: 'cartoon',    name: 'Cartoon',   swatch: 'linear-gradient(135deg,#ef4444,#f97316,#facc15)' },
+];
+
+const AVATAR_IDS: CarouselStyleModel[] = AVATAR_STYLES.map(s => s.id);
+
+function StyleChip({ id, name, swatch, active, disabled, onClick }: {
+  id: CarouselStyleModel; name: string; swatch: string;
+  active: boolean; disabled: boolean; onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all duration-150 active:scale-95 disabled:opacity-50 ${
+        active
+          ? 'border-accent-purple bg-accent-purple/15 text-dark-text shadow-[0_0_8px_rgba(139,92,246,0.3)]'
+          : 'border-dark-border bg-dark-border/30 text-dark-muted hover:border-accent-purple/40 hover:text-dark-text'
+      }`}
+    >
+      <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: swatch }} />
+      {name}
+    </button>
+  );
+}
+
+function StylePicker({ styleModel, onSelect, disabled }: {
+  styleModel: CarouselStyleModel;
+  onSelect: (s: CarouselStyleModel) => void;
+  disabled: boolean;
+}) {
+  const isAvatar = AVATAR_IDS.includes(styleModel);
+
+  return (
+    <div className="glass-panel rounded-2xl border border-dark-border px-4 py-3 space-y-2.5 animate-fade-in" style={{ animationDelay: '80ms' }}>
+      {/* Linha 1: Estilos foto + chip "Infantil" gateway */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[9px] font-bold text-dark-muted uppercase tracking-wider w-8 flex-shrink-0">Estilo</span>
+        {PHOTO_STYLES.map(s => (
+          <StyleChip key={s.id} {...s} active={styleModel === s.id} disabled={disabled} onClick={() => onSelect(s.id)} />
+        ))}
+        {/* Infantil como gateway */}
+        <StyleChip
+          id="infantil" name="Infantil" swatch="linear-gradient(135deg,#fb923c,#facc15,#4ade80)"
+          active={isAvatar} disabled={disabled}
+          onClick={() => onSelect(isAvatar ? 'lifestyle' : 'infantil')}
+        />
+      </div>
+
+      {/* Linha 2: Sub-estilos avatar — só quando Infantil está ativo */}
+      {isAvatar && (
+        <div className="flex items-center gap-2 flex-wrap animate-fade-in">
+          <span className="text-[9px] font-bold text-dark-muted uppercase tracking-wider w-8 flex-shrink-0">Avatar</span>
+          {AVATAR_STYLES.map(s => (
+            <StyleChip key={s.id} {...s} active={styleModel === s.id} disabled={disabled} onClick={() => onSelect(s.id)} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FORMATS: { id: PlatformType; label: string; icon: React.FC<{ className?: string }>; color: string }[] = [
+  { id: 'instagram', label: 'Instagram',  icon: Instagram, color: 'text-pink-400'  },
+  { id: 'x',         label: 'X / Twitter', icon: Twitter,   color: 'text-sky-400'   },
+  { id: 'linkedin',  label: 'LinkedIn',    icon: Linkedin,  color: 'text-blue-400'  },
+];
+
+const GRADIENTS = [
+  'linear-gradient(135deg,#4f46e5,#7c3aed,#c084fc)',
+  'linear-gradient(135deg,#0891b2,#06b6d4,#22d3ee)',
+  'linear-gradient(135deg,#f97316,#ea580c,#f43f5e)',
+  'linear-gradient(135deg,#a855f7,#ec4899,#f43f5e)',
+  'linear-gradient(135deg,#059669,#10b981,#34d399)',
+  'linear-gradient(135deg,#111827,#1f2937,#374151)',
+  'linear-gradient(135deg,#7c3aed,#4f46e5,#0891b2)',
+  'linear-gradient(135deg,#dc2626,#ea580c,#f59e0b)',
+];
+
+function PublishModal({ platform, onClose }: { platform: PlatformType; onClose: () => void }) {
+  const label = FORMATS.find(f => f.id === platform)?.label ?? platform;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="relative w-full max-w-sm glass-panel-heavy rounded-2xl border border-dark-border p-5 space-y-4" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-3 right-3 text-dark-muted hover:text-dark-text"><X className="h-4 w-4" /></button>
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-accent-purple/10 border border-accent-purple/20">
+            <Send className="h-4 w-4 text-accent-purple" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-dark-text">Publicar no {label}</h3>
+            <p className="text-[10px] text-dark-muted">Passos necessários</p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          {['Conectar conta Business/Creator', 'Configurar App no Meta Developer', 'Autorizar permissões de publicação'].map((s, i) => (
+            <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-lg bg-dark-border/30 border border-dark-border">
+              <Clock className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
+              <span className="text-xs text-dark-muted">{s}</span>
+            </div>
+          ))}
+        </div>
+        <div className="p-3 rounded-xl bg-accent-cyan/5 border border-accent-cyan/15 flex gap-2">
+          <Info className="h-3.5 w-3.5 text-accent-cyan flex-shrink-0 mt-0.5" />
+          <p className="text-[10px] text-dark-muted leading-relaxed">Publicação automática em breve. Por ora, exporte os slides e a legenda copiada.</p>
+        </div>
+        <button onClick={onClose} className="w-full py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan">Entendido</button>
+      </div>
+    </div>
+  );
+}
+
+function SlideCard({
+  slide, index, isActive, total,
+  onClick, onDelete, onRegenerate,
+}: {
+  slide: Slide; index: number; isActive: boolean; total: number;
+  onClick: () => void; onDelete: () => void; onRegenerate: () => void;
+}) {
+  return (
+    <div className="relative group">
+      <button
+        onClick={onClick}
+        className={`relative w-full aspect-[4/5] rounded-2xl overflow-hidden border-2 transition-all duration-300 ease-out block ${
+          isActive
+            ? 'border-accent-purple shadow-[0_0_28px_rgba(139,92,246,0.5)] scale-[1.03] z-10'
+            : 'border-dark-border hover:border-accent-purple/60 hover:shadow-[0_8px_28px_rgba(0,0,0,0.5)] hover:scale-[1.02] hover:-translate-y-0.5'
+        }`}
+      >
+        {/* Background */}
+        {slide.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={slide.imageUrl} alt={slide.title} className="w-full h-full object-cover" />
+        ) : slide.isGeneratingImage ? (
+          <div className="w-full h-full bg-dark-border flex flex-col items-center justify-center gap-2">
+            <Loader2 className="h-5 w-5 text-accent-purple animate-spin" />
+            <span className="text-[9px] text-dark-muted font-semibold">Gerando...</span>
+          </div>
+        ) : (
+          <div className="w-full h-full flex flex-col justify-between p-3" style={{ background: slide.background }}>
+            <span className="text-[8px] font-black text-white/30 uppercase tracking-widest">SLIDE {index + 1}</span>
+            <div className="space-y-1">
+              <p className="text-[11px] font-extrabold text-white leading-tight line-clamp-3">{slide.title || 'Título'}</p>
+              <p className="text-[9px] text-white/70 leading-snug line-clamp-2">{slide.subtitle}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Slide number badge */}
+        <span className="absolute top-2 left-2 text-[9px] font-black text-white bg-black/60 backdrop-blur-sm rounded-md px-1.5 py-0.5 leading-tight">
+          {index + 1}/{total}
+        </span>
+
+        {/* Regenerate overlay */}
+        {slide.imagePrompt && (
+          <div
+            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+            onClick={e => { e.stopPropagation(); onRegenerate(); }}
+          >
+            <div className="flex flex-col items-center gap-1.5">
+              <div className="p-2 rounded-full bg-white/10 border border-white/20">
+                <RefreshCw className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-[9px] text-white/80 font-semibold">Regerar</span>
+            </div>
+          </div>
+        )}
+
+        {/* No image yet indicator */}
+        {!slide.imageUrl && !slide.isGeneratingImage && (
+          <div className="absolute bottom-2 right-2 p-1 rounded-md bg-black/40 border border-white/10">
+            <ImageIcon className="h-3 w-3 text-white/40" />
+          </div>
+        )}
+      </button>
+
+      {/* Delete button */}
+      {total > 1 && isActive && (
+        <button
+          onClick={e => { e.stopPropagation(); onDelete(); }}
+          className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500/90 text-white flex items-center justify-center z-10 shadow-md hover:bg-red-500 transition-colors"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+export default function DashboardPage() {
+  const {
+    platform, setPlatform,
+    tone, setTone,
+    content, setContent,
+    slides, setSlides,
+    activeSlideIndex, setActiveSlideIndex,
+    isGenerating,
+    styleModel, setStyleModel,
+    watermarkType, setWatermarkType,
+    brandKit,
+    carouselTopic, setCarouselTopic,
+    carouselSlideCount, setCarouselSlideCount,
+    referenceImage, setReferenceImage,
+    isGeneratingCarousel, lastCarouselSource,
+    handleGenerateCarousel, handleRegenerateSlideImage,
+    handleRefineCaption, handleGenerateTextPost,
+  } = useAppContext();
+
+  const [copied,        setCopied]        = React.useState(false);
+  const [showPublish,   setShowPublish]   = React.useState(false);
+  const [isExportingAll, setIsExportingAll] = React.useState(false);
+
+  // Instagram publish state machine
+  type PublishState = 'idle' | 'publishing' | 'success' | 'error';
+  const [publishState,   setPublishState]   = React.useState<PublishState>('idle');
+  const [publishError,   setPublishError]   = React.useState('');
+  const [publishPermalink, setPublishPermalink] = React.useState('');
+
+  const isCarousel    = platform === 'instagram';
+  const readyToPublish = isCarousel ? slides.some(s => s.imageUrl) : content.trim().length > 0;
+  const activeSlide   = slides[activeSlideIndex];
+  const imagesReady   = slides.filter(s => s.imageUrl).length;
+
+  const handleCopyCaption = async () => {
+    try { await navigator.clipboard.writeText(content); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /**/ }
+  };
+
+  const renderGradientSlide = (slide: Slide, index: number): HTMLCanvasElement | null => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080; canvas.height = 1350;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    const grad = ctx.createLinearGradient(0, 0, 0, 1350);
+    grad.addColorStop(0, '#0b0c10'); grad.addColorStop(1, '#171923');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, 1080, 1350);
+    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 64px sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(slide?.title || '', 80, 260);
+    return canvas;
+  };
+
+  const handleDownloadAll = async () => {
+    if (isExportingAll) return;
+    setIsExportingAll(true);
+    try {
+      for (let i = 0; i < slides.length; i++) {
+        const slide = slides[i];
+        const link = document.createElement('a');
+        link.download = `socialpro-slide-${i + 1}.png`;
+        link.href = slide?.imageUrl ?? (renderGradientSlide(slide, i)?.toDataURL('image/png') ?? '');
+        link.click();
+        await new Promise(r => setTimeout(r, 350));
+      }
+    } finally { setIsExportingAll(false); }
+  };
+
+  const handleDownloadActive = () => {
+    const slide = slides[activeSlideIndex];
+    const link = document.createElement('a');
+    link.download = `socialpro-slide-${activeSlideIndex + 1}.png`;
+    link.href = slide?.imageUrl ?? (renderGradientSlide(slide, activeSlideIndex)?.toDataURL('image/png') ?? '');
+    link.click();
+  };
+
+  const handlePublishToInstagram = async () => {
+    if (publishState === 'publishing') return;
+    setPublishState('publishing');
+    setPublishError('');
+    setPublishPermalink('');
+    try {
+      const res = await fetch('/api/instagram/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slides: slides.map(s => ({ imageUrl: s.imageUrl ?? '', title: s.title, subtitle: s.subtitle })),
+          caption: content,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error ?? 'Erro ao publicar.');
+      setPublishState('success');
+      if (data.permalink) setPublishPermalink(data.permalink);
+      // Reset after 8s
+      setTimeout(() => { setPublishState('idle'); setPublishPermalink(''); }, 8000);
+    } catch (err) {
+      setPublishState('error');
+      setPublishError(err instanceof Error ? err.message : 'Erro desconhecido.');
+      setTimeout(() => setPublishState('idle'), 6000);
+    }
+  };
+
+  const handleAddSlide = () => {
+    if (slides.length >= 8) return;
+    const newSlide: Slide = {
+      id: Math.random().toString(36).slice(2, 9),
+      title: `Slide ${slides.length + 1}`,
+      subtitle: 'Texto de apoio do slide.',
+      background: GRADIENTS[slides.length % GRADIENTS.length],
+    };
+    setSlides([...slides, newSlide]);
+    setActiveSlideIndex(slides.length);
+  };
+
+  const handleDeleteSlide = (index: number) => {
+    if (slides.length <= 1) return;
+    const updated = slides.filter((_, i) => i !== index);
+    setSlides(updated);
+    if (activeSlideIndex >= updated.length) setActiveSlideIndex(updated.length - 1);
+  };
+
+  return (
+    <>
+      {showPublish && <PublishModal platform={platform} onClose={() => setShowPublish(false)} />}
+
+      <div className="space-y-4 w-full">
+
+        {/* ── Platform tabs ── */}
+        <div className="flex items-center gap-1 p-1 glass-panel rounded-xl border border-dark-border w-fit animate-fade-in">
+          {FORMATS.map(f => {
+            const Icon = f.icon;
+            const active = platform === f.id;
+            return (
+              <button key={f.id} onClick={() => setPlatform(f.id)}
+                className={`btn-press flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  active ? 'bg-accent-purple/20 border border-accent-purple/30 text-dark-text' : 'text-dark-muted hover:text-dark-text border border-transparent'
+                }`}
+              >
+                <Icon className={`h-3.5 w-3.5 ${active ? f.color : ''}`} />
+                <span className="hidden sm:inline">{f.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Studio card ── */}
+        <div className="animate-fade-in" style={{ animationDelay: '60ms' }}>
+        {isCarousel ? (
+          <CarouselCard
+            slides={slides} activeSlideIndex={activeSlideIndex}
+            onUpdateSlides={setSlides} onSetActiveSlide={setActiveSlideIndex}
+            styleModel={styleModel} onUpdateStyleModel={setStyleModel}
+            watermarkType={watermarkType} onUpdateWatermarkType={setWatermarkType}
+            brandName={brandKit.brandName} brandHandle={brandKit.brandHandle} avatarUrl={brandKit.avatarUrl}
+            carouselTopic={carouselTopic} onUpdateCarouselTopic={setCarouselTopic}
+            carouselSlideCount={carouselSlideCount} onUpdateCarouselSlideCount={setCarouselSlideCount}
+            isGeneratingCarousel={isGeneratingCarousel} lastCarouselSource={lastCarouselSource}
+            onGenerateCarousel={handleGenerateCarousel} onRegenerateSlideImage={handleRegenerateSlideImage}
+            tone={tone} onUpdateTone={setTone}
+            referenceImage={referenceImage} onUpdateReferenceImage={setReferenceImage}
+          />
+        ) : (
+          <TextPostCard
+            platform={platform} topic={carouselTopic} onUpdateTopic={setCarouselTopic}
+            tone={tone} onUpdateTone={setTone} content={content} onUpdateContent={setContent}
+            isGenerating={isGenerating} onGenerate={handleGenerateTextPost} onRefine={handleRefineCaption}
+          />
+        )}
+        </div>
+
+        {/* ── Style picker (Instagram only) ── */}
+        {isCarousel && <StylePicker styleModel={styleModel} onSelect={setStyleModel} disabled={isGeneratingCarousel} />}
+
+        {/* ── Slides grid (only for Instagram) ── */}
+        {isCarousel && (
+          <div className="glass-panel rounded-2xl border border-dark-border overflow-hidden animate-fade-in" style={{ animationDelay: '120ms' }}>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-dark-border">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-bold text-dark-text uppercase tracking-wider">Slides</span>
+                <span className="text-[10px] text-dark-muted bg-dark-border/60 px-2 py-0.5 rounded-full">
+                  {slides.length} · {imagesReady} com imagem
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={handleDownloadActive}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border border-dark-border text-dark-muted hover:text-dark-text transition-all">
+                  <Download className="h-3.5 w-3.5" /> Atual
+                </button>
+                <button onClick={handleDownloadAll} disabled={isExportingAll}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-white bg-gradient-to-r from-accent-purple to-accent-cyan disabled:opacity-60 transition-all">
+                  {isExportingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                  Exportar todos
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4 space-y-3">
+              {/* Skeleton grid — shown while fetching slide text */}
+              {isGeneratingCarousel ? (
+                <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
+                  {Array.from({ length: carouselSlideCount }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="aspect-[4/5] rounded-2xl border-2 border-dark-border overflow-hidden"
+                      style={{ animationDelay: `${i * 80}ms` }}
+                    >
+                      <div className="w-full h-full shimmer bg-dark-border/40 flex flex-col justify-between p-3">
+                        {/* Top pill */}
+                        <div className="h-3 w-10 rounded-full bg-white/10" />
+                        {/* Bottom lines */}
+                        <div className="space-y-2">
+                          <div className="h-3 w-4/5 rounded-full bg-white/10" />
+                          <div className="h-2 w-3/5 rounded-full bg-white/8" />
+                          <div className="h-2 w-2/4 rounded-full bg-white/6" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+              /* Slide grid — min 180px = ~40% taller than before */
+              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
+                {slides.map((slide, idx) => (
+                  <SlideCard
+                    key={slide.id}
+                    slide={slide} index={idx} isActive={idx === activeSlideIndex} total={slides.length}
+                    onClick={() => setActiveSlideIndex(idx)}
+                    onDelete={() => handleDeleteSlide(idx)}
+                    onRegenerate={() => handleRegenerateSlideImage(slide.id, slide.title, slide.subtitle, slide.imagePrompt || '')}
+                  />
+                ))}
+
+                {/* Add slide */}
+                {slides.length < 8 && (
+                  <button onClick={handleAddSlide}
+                    className="aspect-[4/5] rounded-2xl border-2 border-dashed border-dark-border hover:border-accent-purple/50 flex flex-col items-center justify-center gap-2 transition-all text-dark-muted hover:text-accent-purple group">
+                    <Plus className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] font-semibold">Novo slide</span>
+                  </button>
+                )}
+              </div>
+              )}
+
+              {/* Active slide editor — compact, secondary */}
+              {activeSlide && (
+                <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-dark-border/60 animate-fade-in">
+                  <input
+                    type="text"
+                    value={activeSlide.title}
+                    onChange={e => setSlides(slides.map((s, i) => i === activeSlideIndex ? { ...s, title: e.target.value } : s))}
+                    className="interactive-input flex-1 py-2 text-sm font-semibold"
+                    placeholder={`Título do slide ${activeSlideIndex + 1}`}
+                  />
+                  <input
+                    type="text"
+                    value={activeSlide.subtitle}
+                    onChange={e => setSlides(slides.map((s, i) => i === activeSlideIndex ? { ...s, subtitle: e.target.value } : s))}
+                    className="interactive-input flex-1 py-2 text-sm text-dark-muted"
+                    placeholder="Texto de apoio"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Caption + Publish — compact row ── */}
+        <div
+          className="flex flex-col lg:flex-row gap-3 animate-fade-in"
+          style={{ animationDelay: '180ms' }}
+        >
+          {/* Legenda — flex-1, compact */}
+          {isCarousel && (
+            <div className="flex-1 glass-panel rounded-2xl border border-dark-border p-3 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-dark-text">Legenda</span>
+                <span className="text-[10px] text-dark-muted tabular-nums">{content.length} car.</span>
+              </div>
+              <textarea
+                value={content} onChange={e => setContent(e.target.value)}
+                className="interactive-input w-full h-16 resize-none py-2 text-[11px] leading-relaxed"
+                placeholder="Legenda gerada pela IA aparece aqui..."
+              />
+              <div className="flex gap-2">
+                <button onClick={handleRefineCaption} disabled={isGenerating || !content.trim()}
+                  className="btn-press flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan disabled:opacity-50 hover:shadow-[0_0_14px_rgba(139,92,246,0.35)] transition-all">
+                  {isGenerating ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Refinando...</> : <><Wand2 className="h-3.5 w-3.5" />Refinar</>}
+                </button>
+                <button onClick={handleCopyCaption} disabled={!content.trim()}
+                  className="btn-press flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-semibold border border-dark-border text-dark-muted hover:text-dark-text disabled:opacity-50 transition-all">
+                  {copied ? <><Check className="h-3.5 w-3.5 text-emerald-400" />Copiado!</> : <><Copy className="h-3.5 w-3.5" />Copiar</>}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Actions panel */}
+          <div className={`${isCarousel ? 'lg:w-64 flex-shrink-0' : 'w-full'} glass-panel rounded-2xl border border-dark-border p-3 flex flex-col gap-2.5`}>
+
+            <p className="text-[11px] font-bold text-dark-text px-0.5">Ações</p>
+
+            {/* Download all */}
+            <button
+              onClick={handleDownloadAll}
+              disabled={isExportingAll || !readyToPublish}
+              className="btn-press w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[11px] font-bold border border-dark-border text-dark-text hover:border-accent-purple/40 hover:bg-accent-purple/5 disabled:opacity-40 transition-all"
+            >
+              {isExportingAll
+                ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Baixando...</>
+                : <><Download className="h-3.5 w-3.5" />Baixar imagens ({slides.filter(s => s.imageUrl).length}/{slides.length})</>}
+            </button>
+
+            {/* Publish to Instagram */}
+            <button
+              onClick={handlePublishToInstagram}
+              disabled={publishState === 'publishing' || !readyToPublish}
+              className={`btn-press w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[11px] font-bold text-white transition-all disabled:opacity-40 ${
+                publishState === 'success'
+                  ? 'bg-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.4)]'
+                  : publishState === 'error'
+                  ? 'bg-red-500/80'
+                  : 'bg-gradient-to-r from-accent-purple to-accent-cyan shadow-[0_0_14px_rgba(139,92,246,0.25)] hover:shadow-[0_0_24px_rgba(139,92,246,0.5)] disabled:shadow-none'
+              }`}
+            >
+              {publishState === 'publishing' && <><Loader2 className="h-3.5 w-3.5 animate-spin" />Publicando...</>}
+              {publishState === 'success'    && <><Check className="h-3.5 w-3.5" />Publicado!</>}
+              {publishState === 'error'      && <><X className="h-3.5 w-3.5" />Falhou</>}
+              {publishState === 'idle'       && <><Send className="h-3.5 w-3.5" />Postar no Instagram</>}
+            </button>
+
+            {/* Feedback messages */}
+            {publishState === 'error' && publishError && (
+              <p className="text-[10px] text-red-400 leading-snug animate-fade-in px-0.5">
+                {publishError}
+              </p>
+            )}
+            {publishState === 'success' && publishPermalink && (
+              <a
+                href={publishPermalink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 font-semibold animate-fade-in px-0.5 transition-colors"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Ver post no Instagram
+              </a>
+            )}
+            {!readyToPublish && publishState === 'idle' && (
+              <p className="text-[10px] text-dark-muted px-0.5">
+                Gere e aguarde as imagens para habilitar.
+              </p>
+            )}
+          </div>
+        </div>
+
+      </div>
+    </>
+  );
+}

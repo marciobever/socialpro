@@ -1,0 +1,476 @@
+"use client";
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import type { PlatformType, ToneType, Slide, EditorialItem, CarouselStyleModel, WatermarkType } from '../types';
+
+interface AppContextType {
+  brandKit: {
+    brandName: string;
+    brandHandle: string;
+    avatarUrl: string;
+    aiBio: string;
+  };
+  setBrandKit: React.Dispatch<React.SetStateAction<{
+    brandName: string;
+    brandHandle: string;
+    avatarUrl: string;
+    aiBio: string;
+  }>>;
+  planName: string;
+  setPlanName: (plan: string) => void;
+  styleModel: CarouselStyleModel;
+  setStyleModel: (model: CarouselStyleModel) => void;
+  watermarkType: WatermarkType;
+  setWatermarkType: (type: WatermarkType) => void;
+  platform: PlatformType;
+  setPlatform: (platform: PlatformType) => void;
+  tone: ToneType;
+  setTone: (tone: ToneType) => void;
+  content: string;
+  setContent: (content: string) => void;
+  slides: Slide[];
+  setSlides: React.Dispatch<React.SetStateAction<Slide[]>>;
+  activeSlideIndex: number;
+  setActiveSlideIndex: (index: number) => void;
+  isGenerating: boolean;
+  setIsGenerating: (gen: boolean) => void;
+  carouselTopic: string;
+  setCarouselTopic: (topic: string) => void;
+  carouselSlideCount: number;
+  setCarouselSlideCount: (count: number) => void;
+  referenceImage: string | null;
+  setReferenceImage: (img: string | null) => void;
+  isGeneratingCarousel: boolean;
+  lastCarouselSource: 'ai' | 'fallback' | null;
+  scheduledItems: EditorialItem[];
+  setScheduledItems: React.Dispatch<React.SetStateAction<EditorialItem[]>>;
+  selectedItemId: string;
+  setSelectedItemId: (id: string) => void;
+  handleLoginSuccess: (selectedPlan: string) => void;
+  handleAddScheduledItem: (newItem: EditorialItem) => void;
+  handleDeleteScheduledItem: (id: string) => void;
+  handleAIGenerate: () => Promise<void>;
+  handleGenerateCarousel: () => Promise<void>;
+  handleRegenerateSlideImage: (slideId: string, title: string, subtitle: string, imagePrompt: string) => Promise<void>;
+  handleRefineCaption: () => Promise<void>;
+  handleGenerateTextPost: () => Promise<void>;
+  handleSelectItem: (item: EditorialItem) => void;
+  handleSelectIdea: (hook: string, structure: string) => void;
+}
+
+const AppContext = createContext<AppContextType | undefined>(undefined);
+
+const INITIAL_SLIDES: Slide[] = [
+  {
+    id: 's1',
+    title: 'Login por GitHub foi alterado',
+    subtitle: '🚨 A ajuda oficial informa que GitHub e Facebook não são mais opções de login. O acesso migrou para e-mail ou Google.',
+    background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #c084fc 100%)',
+  },
+  {
+    id: 's2',
+    title: '01. O Gancho de Fricção',
+    subtitle: 'Prenda a atenção forçando o cérebro do usuário a parar o scroll. Notícias urgentes geram mais cliques.',
+    background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%)',
+  },
+  {
+    id: 's3',
+    title: '02. Explique a Solução',
+    subtitle: 'Ninguém quer suspense bobo. Mostre o passo a passo da migração com capturas de tela simplificadas.',
+    background: 'linear-gradient(135deg, #f97316 0%, #ea580c 50%, #f43f5e 100%)',
+  },
+  {
+    id: 's4',
+    title: '03. CTA com Resumo',
+    subtitle: 'Não termine sem orientações claras de segurança. Deixe suas redes sociais visíveis no rodapé do slide.',
+    background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f43f5e 100%)',
+  },
+];
+
+const INITIAL_CALENDAR_ITEMS: EditorialItem[] = [
+  { id: 'c1', day: 'Seg', dayNumber: 8, platform: 'linkedin', time: '09:00', title: 'Framework de Escala', status: 'published' },
+  { id: 'c2', day: 'Ter', dayNumber: 9, platform: 'x', time: '14:30', title: 'O Mito do Trabalho Duro', status: 'published' },
+  { id: 'c3', day: 'Qua', dayNumber: 10, platform: 'linkedin', time: '10:15', title: 'Como Criar Conteúdo Magnético', status: 'scheduled' },
+  { id: 'c4', day: 'Qua', dayNumber: 10, platform: 'instagram', time: '18:00', title: 'Carrossel: Mudança de Login GitHub', status: 'scheduled' },
+  { id: 'c5', day: 'Sex', dayNumber: 12, platform: 'instagram', time: '12:00', title: 'Design Figma System', status: 'draft' },
+];
+
+export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [brandKit, setBrandKit] = useState({
+    brandName: 'Seu Nome',
+    brandHandle: '@seu.usuario',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100&h=100',
+    aiBio: 'Estrategista de Growth e Criador de Conteúdo Digital.',
+  });
+
+  const [planName, setPlanName] = useState<string>('Starter Creator');
+  const [styleModel, setStyleModel] = useState<CarouselStyleModel>('lifestyle');
+  const [watermarkType, setWatermarkType] = useState<WatermarkType>('both');
+  const [platform, setPlatform] = useState<PlatformType>('instagram');
+  const [tone, setTone] = useState<ToneType>('provocativo');
+
+  const [content, setContent] = useState<string>(
+    `🚨 ATENÇÃO STRIPE E GITHUB: Login alterado!\n\nA ajuda oficial informa que o botão de autenticação automática pelo GitHub e Facebook foi desativado por questões de segurança. O acesso agora migrou para e-mail ou Google.\n\nVeja as instruções completas nos slides ao lado ➡️`
+  );
+
+  const [slides, setSlides] = useState<Slide[]>(INITIAL_SLIDES);
+  const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [carouselTopic, setCarouselTopic] = useState<string>('');
+  const [carouselSlideCount, setCarouselSlideCount] = useState<number>(5);
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [isGeneratingCarousel, setIsGeneratingCarousel] = useState<boolean>(false);
+  const [lastCarouselSource, setLastCarouselSource] = useState<'ai' | 'fallback' | null>(null);
+  const [scheduledItems, setScheduledItems] = useState<EditorialItem[]>(INITIAL_CALENDAR_ITEMS);
+  const [selectedItemId, setSelectedItemId] = useState<string>('c4');
+
+  const STYLE_PROMPTS: Record<CarouselStyleModel, string> = {
+    // ── Fotografia realista ──
+    lifestyle:  'warm lifestyle photography aesthetic, golden hour lighting, cozy organic atmosphere, amber and warm tones, soft bokeh, editorial magazine feel, rich textures',
+    tech:       'cyberpunk aesthetic, neon purple and cyan glow effects, dark futuristic digital environment, holographic elements, sci-fi atmosphere, deep blacks with electric accents',
+    alert:      'urgent breaking news style, dramatic red and yellow high-contrast lighting, bold powerful composition, warning atmosphere, photojournalism editorial energy',
+    minimalist: 'ultra-clean minimal design, predominantly black and white, elegant negative space, modern editorial aesthetic, subtle geometric accents, luxury magazine style',
+    feminino:   'elegant feminine aesthetic, rose gold and blush pink tones, soft floral and botanical elements, chic and sophisticated, dreamy light and airy atmosphere, luxe beauty editorial',
+    neutro:     'warm neutral earthy palette, beige cream and sand tones, clean modern minimal, natural linen textures, sophisticated and timeless, soft natural light photography',
+    retro:      'vintage retro aesthetic, film grain and light leaks, warm sepia and amber tones, 70s and 80s inspired, nostalgic cinematic feel, analog photography with vignette',
+    // ── Avatar / Ilustração infantil ──
+    infantil: 'bright cheerful cartoon illustration style, vibrant primary colors, playful rounded shapes, pastel rainbow accents, children book aesthetic, fun bubbly and energetic',
+    pixar:    '3D CGI animation style inspired by Pixar and Disney, soft volumetric lighting, expressive rounded facial features, smooth subsurface skin shading, vibrant saturated colors, cinematic 3D render quality, professional character animation, NO photorealism',
+    anime:    'Japanese anime illustration style, large expressive eyes, clean bold linework, vibrant cel-shaded flat colors, dynamic composition, manga-inspired aesthetic, professional anime production quality, illustrated NOT photographic',
+    aquarela: 'delicate watercolor illustration style, soft painterly textures, translucent color washes, hand-painted artistic aesthetic, gentle gradients and bleeds, fine art quality, dreamy ethereal atmosphere, illustrated NOT photographic',
+    flat:     'modern flat design vector illustration, bold geometric shapes, clean minimal linework, vivid solid colors, contemporary graphic design aesthetic, professional editorial illustration, NO depth or photography',
+    cartoon:  'bold expressive cartoon illustration, thick playful outlines, bright oversaturated colors, exaggerated fun proportions, comic strip energy, professional animation studio quality, illustrated NOT photographic',
+  };
+
+  // Pure function — style and handle passed as params so they are locked at generation time
+  const buildImagePrompt = (
+    title: string,
+    subtitle: string,
+    imagePrompt: string,
+    style: CarouselStyleModel,
+    handle: string,
+  ): string => {
+    const styleDesc = STYLE_PROMPTS[style];
+    const cleanHandle = handle || '@socialpro';
+    return (
+      `Instagram carousel slide. ` +
+      `Title text to display: "${title}". ` +
+      `Subtitle text to display: "${subtitle}". ` +
+      `Visual scene: ${imagePrompt || 'cinematic illustration related to the slide topic'}. ` +
+      `Visual style: ${styleDesc}. ` +
+      `Clean bold white typography overlaid on the scene. ` +
+      `Include small "${cleanHandle}" watermark at bottom. ` +
+      `Professional social media graphic design, portrait format 4:5.`
+    );
+  };
+
+  // style + handle + referenceImage are passed explicitly — locked at generation time
+  const generateSlideImages = useCallback(
+    async (slidesToProcess: Slide[], style: CarouselStyleModel, handle: string, refImage?: string | null) => {
+      const BATCH = 2;
+      for (let i = 0; i < slidesToProcess.length; i += BATCH) {
+        const chunk = slidesToProcess.slice(i, i + BATCH);
+        await Promise.allSettled(
+          chunk.map(async (slide) => {
+            const prompt = buildImagePrompt(
+              slide.title,
+              slide.subtitle,
+              slide.imagePrompt || '',
+              style,
+              handle,
+            );
+
+            setSlides((prev) =>
+              prev.map((s) => (s.id === slide.id ? { ...s, isGeneratingImage: true } : s))
+            );
+
+            try {
+              const resp = await fetch('/api/ai/image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt, referenceImage: refImage ?? null }),
+              });
+
+              if (resp.ok) {
+                const data = await resp.json();
+                setSlides((prev) =>
+                  prev.map((s) =>
+                    s.id === slide.id
+                      ? { ...s, imageUrl: data.imageUrl, isGeneratingImage: false }
+                      : s
+                  )
+                );
+              } else {
+                setSlides((prev) =>
+                  prev.map((s) => (s.id === slide.id ? { ...s, isGeneratingImage: false } : s))
+                );
+              }
+            } catch {
+              setSlides((prev) =>
+                prev.map((s) => (s.id === slide.id ? { ...s, isGeneratingImage: false } : s))
+              );
+            }
+          })
+        );
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const handleLoginSuccess = (selectedPlan: string) => {
+    setPlanName(selectedPlan);
+  };
+
+  const handleAddScheduledItem = (newItem: EditorialItem) => {
+    setScheduledItems((prev) => [...prev, newItem]);
+  };
+
+  const handleDeleteScheduledItem = (id: string) => {
+    setScheduledItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleAIGenerate = async () => {
+    if (!content.trim()) return;
+    setIsGenerating(true);
+
+    try {
+      const response = await fetch('/api/ai/refine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, tone, aiBio: brandKit.aiBio }),
+      });
+
+      if (!response.ok) throw new Error('Falha no serviço.');
+      const data = await response.json();
+      const refinedText = data.refinedText;
+      setContent(refinedText);
+
+      const colors: Record<string, string> = {
+        provocativo: 'linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #d946ef 100%)',
+        storyteller: 'linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%)',
+        meme: 'linear-gradient(135deg, #f97316 0%, #ea580c 50%, #f43f5e 100%)',
+        autoridade: 'linear-gradient(135deg, #091e3a 0%, #2f80ed 50%, #2d9cdb 100%)',
+      };
+
+      const lines = refinedText.split('\n').filter((l: string) => l.trim().length > 5);
+      const t1 = lines[0]?.substring(0, 30).toUpperCase().replace(/[#🚨⚠️🔒*]/g, '') || 'POST REFINADO';
+      const s1 = lines[1]?.replace(/^[0-9.-]\s*/, '') || 'Roteiro de conteúdo de alta conversão.';
+      const t2 = lines[2]?.substring(0, 30).toUpperCase().replace(/[#🚨⚠️🔒*]/g, '') || 'ESTRATÉGIA';
+      const s2 = lines[3]?.replace(/^[0-9.-]\s*/, '') || 'Mantenha o foco em ganchos fortes.';
+
+      setSlides([
+        { id: 'as1', title: t1, subtitle: s1, background: colors[tone] },
+        { id: 'as2', title: `01. ${t2}`, subtitle: s2, background: 'linear-gradient(135deg, #111827 0%, #1f2937 50%, #374151 100%)' },
+        { id: 'as3', title: '02. AÇÃO PRÁTICA', subtitle: 'Aplique este checklist hoje mesmo e veja os resultados de engajamento.', background: colors[tone] },
+      ]);
+      setActiveSlideIndex(0);
+      setIsGenerating(false);
+    } catch {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleGenerateCarousel = async () => {
+    const topic = carouselTopic.trim();
+    if (!topic || isGeneratingCarousel) return;
+
+    // Lock style, handle and referenceImage at click time
+    const lockedStyle  = styleModel;
+    const lockedHandle = brandKit.brandHandle;
+    const lockedRef    = referenceImage;
+
+    setIsGeneratingCarousel(true);
+    setLastCarouselSource(null);
+
+    try {
+      const response = await fetch('/api/ai/carousel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic, tone, aiBio: brandKit.aiBio, slideCount: carouselSlideCount }),
+      });
+
+      if (!response.ok) throw new Error('Falha ao gerar o carrossel.');
+
+      const data = await response.json();
+      const generated: Slide[] = Array.isArray(data?.slides) ? data.slides : [];
+
+      if (generated.length) {
+        setSlides(generated);
+        setActiveSlideIndex(0);
+        setLastCarouselSource(data?.source === 'ai' ? 'ai' : 'fallback');
+        setContent(
+          `${generated[0].title}\n\n${generated[0].subtitle}\n\nDeslize ➡️ e salve este post para não esquecer.\n\n#${tone} #conteudo #socialpro`
+        );
+
+        // Locked style + referenceImage — changing chips now has no effect on this batch
+        generateSlideImages(generated, lockedStyle, lockedHandle, lockedRef).catch(console.error);
+      }
+    } catch {
+      // Local fallback
+      const colors = [
+        'linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #c084fc 100%)',
+        'linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%)',
+        'linear-gradient(135deg, #f97316 0%, #ea580c 50%, #f43f5e 100%)',
+        'linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f43f5e 100%)',
+        'linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%)',
+      ];
+      const topic = carouselTopic.trim();
+      const count = Math.min(Math.max(carouselSlideCount, 3), 8);
+      const short = topic.length > 38 ? `${topic.slice(0, 38)}…` : topic;
+      const localSlides: Slide[] = [
+        { id: `lf1-${Math.random().toString(36).slice(2, 8)}`, title: 'A VERDADE QUE NINGUÉM TE CONTA', subtitle: `Tudo sobre ${short} em ${count} slides. Deslize até o fim. ➡️`, background: colors[0] },
+      ];
+      for (let i = 1; i < count - 1; i++) {
+        localSlides.push({ id: `lf${i + 1}-${Math.random().toString(36).slice(2, 8)}`, title: `0${i}. PONTO-CHAVE`, subtitle: `Aplique este passo sobre ${short} hoje mesmo.`, background: colors[i % colors.length] });
+      }
+      localSlides.push({ id: `lf${count}-${Math.random().toString(36).slice(2, 8)}`, title: 'SALVE ESTE POST', subtitle: `Curtiu? Comente "EU QUERO" e siga para mais sobre ${short}.`, background: colors[(count - 1) % colors.length] });
+      setSlides(localSlides);
+      setActiveSlideIndex(0);
+      setLastCarouselSource('fallback');
+      generateSlideImages(localSlides, lockedStyle, lockedHandle, lockedRef).catch(console.error);
+    } finally {
+      setIsGeneratingCarousel(false);
+    }
+  };
+
+  const handleRegenerateSlideImage = useCallback(
+    async (slideId: string, title: string, subtitle: string, imagePrompt: string) => {
+      // Intentionally uses CURRENT style — user may have changed it to restyle a single slide
+      const prompt = buildImagePrompt(title, subtitle, imagePrompt, styleModel, brandKit.brandHandle);
+      setSlides((prev) =>
+        prev.map((s) => (s.id === slideId ? { ...s, isGeneratingImage: true, imageUrl: undefined } : s))
+      );
+      try {
+        const resp = await fetch('/api/ai/image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          setSlides((prev) =>
+            prev.map((s) =>
+              s.id === slideId ? { ...s, imageUrl: data.imageUrl, isGeneratingImage: false } : s
+            )
+          );
+        } else {
+          setSlides((prev) =>
+            prev.map((s) => (s.id === slideId ? { ...s, isGeneratingImage: false } : s))
+          );
+        }
+      } catch {
+        setSlides((prev) =>
+          prev.map((s) => (s.id === slideId ? { ...s, isGeneratingImage: false } : s))
+        );
+      }
+    },
+    [styleModel, brandKit.brandHandle]
+  );
+
+  const handleRefineCaption = async () => {
+    if (!content.trim() || isGenerating) return;
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/ai/refine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, tone, aiBio: brandKit.aiBio }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data?.refinedText) setContent(data.refinedText);
+      }
+    } catch {
+      // silent
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleGenerateTextPost = async () => {
+    const topic = carouselTopic.trim();
+    if (!topic || isGenerating) return;
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/ai/refine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: topic, tone, aiBio: brandKit.aiBio }),
+      });
+      if (!response.ok) throw new Error('Falha ao gerar o post.');
+      const data = await response.json();
+      if (data?.refinedText) { setContent(data.refinedText); return; }
+      throw new Error('Resposta vazia.');
+    } catch {
+      const hooks: Record<ToneType, string> = {
+        provocativo: `A verdade incômoda sobre ${carouselTopic}:`,
+        autoridade: `3 lições práticas sobre ${carouselTopic} que poucos aplicam:`,
+        storyteller: `Demorei pra entender isso sobre ${carouselTopic}. Hoje compartilho:`,
+        meme: `Eu tentando dominar ${carouselTopic} às 3h da manhã:`,
+      };
+      setContent(`${hooks[tone]}\n\n1. Comece pelo essencial, não pelo perfeito.\n2. Consistência vence intensidade.\n3. Documente o processo, não só o resultado.\n\nO que você faria diferente? Comenta aí 👇`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSelectItem = (item: EditorialItem) => {
+    setSelectedItemId(item.id);
+    setPlatform(item.platform);
+    if (item.id === 'c3') {
+      setContent(`🚀 A maioria dos criadores está perdendo tempo criando posts irrelevantes.\n\nEu costumava postar todos os dias, mas os resultados eram medíocres. Depois de analisar mais de 500 postagens virais, entendi que o segredo é a consistência estratégica:\n\n1. Ganchos de alta fricção\n2. Distribuição visual (carrosséis estruturados)\n3. CTAs acionáveis\n\nQuer receber meu checklist completo? Comente 'SOCIAL' abaixo e eu te envio na hora!`);
+      setSlides(INITIAL_SLIDES);
+    } else if (item.id === 'c4') {
+      setContent(`🚨 ATENÇÃO STRIPE E GITHUB: Login alterado!\n\nA ajuda oficial informa que o botão de autenticação automática pelo GitHub e Facebook foi desativado por questões de segurança. O acesso agora migrou para e-mail ou Google.\n\nVeja as instruções completas nos slides ao lado ➡️`);
+      setSlides(INITIAL_SLIDES);
+    } else {
+      setContent(`Rascunho de post sobre: ${item.title}.\n\nEdite este texto no painel.`);
+      setSlides([{ id: 'rs1', title: item.title, subtitle: 'Rascunho editável do post semanal.', background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)' }]);
+    }
+    setActiveSlideIndex(0);
+  };
+
+  const handleSelectIdea = (hook: string, structure: string) => {
+    setContent(`${hook}\n\n[Estrutura sugerida:]\n${structure}`);
+  };
+
+  return (
+    <AppContext.Provider value={{
+      brandKit, setBrandKit,
+      planName, setPlanName: handleLoginSuccess,
+      styleModel, setStyleModel,
+      watermarkType, setWatermarkType,
+      platform, setPlatform,
+      tone, setTone,
+      content, setContent,
+      slides, setSlides,
+      activeSlideIndex, setActiveSlideIndex,
+      isGenerating, setIsGenerating,
+      carouselTopic, setCarouselTopic,
+      carouselSlideCount, setCarouselSlideCount,
+      referenceImage, setReferenceImage,
+      isGeneratingCarousel,
+      lastCarouselSource,
+      scheduledItems, setScheduledItems,
+      selectedItemId, setSelectedItemId,
+      handleLoginSuccess,
+      handleAddScheduledItem,
+      handleDeleteScheduledItem,
+      handleAIGenerate,
+      handleGenerateCarousel,
+      handleRegenerateSlideImage,
+      handleRefineCaption,
+      handleGenerateTextPost,
+      handleSelectItem,
+      handleSelectIdea,
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
+};
+
+export const useAppContext = () => {
+  const context = useContext(AppContext);
+  if (!context) throw new Error('useAppContext must be used within an AppContextProvider');
+  return context;
+};
