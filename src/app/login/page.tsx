@@ -29,17 +29,29 @@ function LoginForm() {
 
   const planQuery = searchParams.get('plan') || 'starter';
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) { setError('Preencha todos os campos.'); return; }
     setError('');
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+      if (result?.error) {
+        setError('E-mail ou senha inválidos.');
+        setLoading(false);
+        return;
+      }
       const names: Record<string, string> = { starter: 'Starter Creator', pro: 'Pro Creator', agency: 'Agency Scale' };
       setPlanName(names[planQuery] ?? 'Starter Creator');
       router.push('/app/dashboard');
-    }, 1000);
+    } catch {
+      setError('Erro ao conectar. Tente novamente.');
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
