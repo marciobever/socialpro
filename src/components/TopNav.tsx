@@ -2,7 +2,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Layers, Calendar, BarChart2, Palette, LogOut, Menu, X, BrainCircuit, Sun, Moon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { Layers, Calendar, BarChart2, Palette, Clock, LogOut, Menu, X, BrainCircuit, Sun, Moon } from 'lucide-react';
 
 interface TopNavProps {
   brandName: string;
@@ -14,6 +15,7 @@ interface TopNavProps {
 export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUrl, planName }) => {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations('nav');
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [theme, setTheme] = React.useState<'dark' | 'light'>('dark');
 
@@ -29,11 +31,14 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
     localStorage.setItem('sp-theme', next);
   };
 
+  // pathname from next/navigation includes the locale prefix (/en/app/dashboard)
+  // so we check with endsWith for locale-agnostic active state
   const navItems = [
-    { href: '/app/dashboard', label: 'Estúdio', icon: Layers },
-    { href: '/app/calendar', label: 'Calendário', icon: Calendar },
-    { href: '/app/analytics', label: 'Analytics', icon: BarChart2 },
-    { href: '/app/brand', label: 'Brand Kit', icon: Palette },
+    { href: '/app/dashboard', label: t('studio'), icon: Layers },
+    { href: '/app/history',   label: t('history'), icon: Clock },
+    { href: '/app/calendar',  label: t('calendar'), icon: Calendar },
+    { href: '/app/analytics', label: t('analytics'), icon: BarChart2 },
+    { href: '/app/brand',     label: t('brandKit'), icon: Palette },
   ];
 
   return (
@@ -57,7 +62,7 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
         <nav className="hidden md:flex items-center gap-0.5">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive = pathname.endsWith(item.href);
             return (
               <Link key={item.href} href={item.href}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -75,7 +80,7 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
         {/* Right */}
         <div className="flex items-center gap-2">
           {/* Theme toggle */}
-          <button onClick={toggleTheme} title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+          <button onClick={toggleTheme} title={theme === 'dark' ? t('lightMode') : t('darkMode')}
             className="p-1.5 rounded-lg text-dark-muted hover:text-dark-text hover:bg-dark-border transition-all border border-transparent hover:border-dark-border"
           >
             {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
@@ -97,7 +102,7 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
           </div>
 
           {/* Logout */}
-          <button onClick={() => router.push('/')} title="Sair"
+          <button onClick={() => router.push('/')} title={t('signOut')}
             className="p-1.5 rounded-lg text-dark-muted hover:text-rose-400 hover:bg-rose-500/10 transition-all border border-transparent"
           >
             <LogOut className="h-3.5 w-3.5" />
@@ -117,7 +122,7 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
         <div className="md:hidden border-t border-dark-border px-4 py-2 space-y-0.5">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive = pathname.endsWith(item.href);
             return (
               <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${

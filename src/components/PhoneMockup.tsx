@@ -42,25 +42,38 @@ export const PhoneMockup: React.FC<PhoneMockupProps> = ({
     }
   };
 
-  const getSlideStyle = () => {
-    if (styleModel === 'lifestyle') {
-      return {
-        backgroundImage: `linear-gradient(to bottom, rgba(7, 8, 12, 0.4) 0%, rgba(7, 8, 12, 0.85) 100%), url(https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600&h=750)`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      };
-    } else if (styleModel === 'tech') {
-      return {
-        background: 'radial-gradient(circle at top right, #8b5cf6 0%, #06b6d4 100%)',
-      };
-    } else if (styleModel === 'alert') {
-      return {
-        background: 'linear-gradient(135deg, #1e0505 0%, #450a0a 50%, #7f1d1d 100%)',
-      };
-    } else { // minimalist
-      return {
-        background: 'linear-gradient(135deg, #0b0c10 0%, #171923 100%)',
-      };
+  const getSlideStyle = (): React.CSSProperties => {
+    switch (styleModel) {
+      case 'lifestyle':
+        return {
+          backgroundImage: `linear-gradient(to bottom, rgba(7,8,12,0.4) 0%, rgba(7,8,12,0.85) 100%), url(https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600&h=750)`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        };
+      case 'tech':
+        return { background: 'radial-gradient(circle at top right, #8b5cf6 0%, #06b6d4 100%)' };
+      case 'alert':
+        return { background: 'linear-gradient(135deg, #1e0505 0%, #450a0a 50%, #7f1d1d 100%)' };
+      case 'feminino':
+        return { background: 'linear-gradient(135deg, #831843 0%, #be185d 50%, #f43f5e 100%)' };
+      case 'neutro':
+        return { background: 'linear-gradient(135deg, #292524 0%, #44403c 50%, #78716c 100%)' };
+      case 'retro':
+        return { background: 'linear-gradient(135deg, #451a03 0%, #92400e 50%, #b45309 100%)' };
+      case 'pixar':
+        return { background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #7c3aed 100%)' };
+      case 'anime':
+        return { background: 'linear-gradient(135deg, #4a044e 0%, #be185d 50%, #f97316 100%)' };
+      case 'aquarela':
+        return { background: 'linear-gradient(135deg, #164e63 0%, #0e7490 50%, #0d9488 100%)' };
+      case 'flat':
+        return { background: 'linear-gradient(135deg, #064e3b 0%, #0d9488 50%, #1d4ed8 100%)' };
+      case 'cartoon':
+        return { background: 'linear-gradient(135deg, #7f1d1d 0%, #c2410c 50%, #ca8a04 100%)' };
+      case 'infantil':
+        return { background: 'linear-gradient(135deg, #ea580c 0%, #eab308 50%, #22c55e 100%)' };
+      default:
+        return { background: 'linear-gradient(135deg, #0b0c10 0%, #171923 100%)' };
     }
   };
 
@@ -298,7 +311,7 @@ export const PhoneMockup: React.FC<PhoneMockupProps> = ({
                 {/* Bottom navigation & profile chip */}
                 <div className="space-y-2 z-10">
                   {/* Floating Creator Chip - Watermark */}
-                  {watermarkType !== 'none' && (styleModel === 'lifestyle' || styleModel === 'tech') && (
+                  {watermarkType !== 'none' && (
                     <div className="flex justify-center">
                       <div className="flex items-center gap-1 bg-black/50 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full shadow-lg">
                         <img 

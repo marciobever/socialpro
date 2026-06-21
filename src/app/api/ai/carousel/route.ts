@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 type GeneratedSlide = { title: string; subtitle: string; imagePrompt: string };
+type CarouselResponse = { slides: GeneratedSlide[]; caption?: string };
 
 const TONE_HINTS: Record<string, string> = {
   provocativo: 'Ganchos desafiadores que quebram crenças. Provoque, questione o senso comum, gere desconforto produtivo.',
@@ -10,7 +11,7 @@ const TONE_HINTS: Record<string, string> = {
   meme: 'Tom descontraído, sarcástico e divertido. Frases curtas, prontas para compartilhar.',
 };
 
-function safeParseSlides(raw: string): GeneratedSlide[] | null {
+function safeParseCarousel(raw: string): CarouselResponse | null {
   const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
@@ -28,7 +29,11 @@ function safeParseSlides(raw: string): GeneratedSlide[] | null {
         subtitle: s.subtitle.trim(),
         imagePrompt: typeof s.imagePrompt === 'string' ? s.imagePrompt.trim() : '',
       }));
-    return slides.length ? slides : null;
+    if (!slides.length) return null;
+    return {
+      slides,
+      caption: typeof parsed.caption === 'string' ? parsed.caption.trim() : undefined,
+    };
   } catch {
     return null;
   }
@@ -80,6 +85,7 @@ export async function POST(request: Request) {
     const topic: string = (body?.topic || '').toString().trim();
     const tone: string = (body?.tone || 'autoridade').toString();
     const aiBio: string = (body?.aiBio || '').toString();
+    const styleDesc: string = (body?.styleDesc || 'dark cinematic aesthetic, moody dramatic lighting, premium editorial quality').toString();
     const slideCount = Math.min(Math.max(parseInt(body?.slideCount, 10) || 5, 3), 8);
 
     if (!topic) {
@@ -129,8 +135,9 @@ REGRAS DE CADA SLIDE:
 - "title": máximo 6 palavras em CAIXA ALTA, sem emojis, sem aspas
 - "subtitle": 1-2 frases, máximo 120 caracteres, linguagem magnética com fatos reais da pesquisa
 - "imagePrompt": cena visual ÚNICA e ESPECÍFICA do item deste slide, em inglês detalhado.
+  Estilo visual obrigatório para todos os slides: "${styleDesc}".
   OBRIGATÓRIO: cada slide deve ter imagePrompt completamente diferente dos outros.
-  Para listas (ex: animes, filmes, apps), descreva a cena visual daquele item específico.
+  Para listas (ex: animes, filmes, apps), descreva a cena visual daquele item específico dentro do estilo acima.
   NUNCA repita o mesmo imagePrompt. Descreva ambiente, cores, objetos, emoção — sem mencionar texto.
 
 ESTRUTURA OBRIGATÓRIA:
@@ -139,8 +146,9 @@ ESTRUTURA OBRIGATÓRIA:
 - Último slide: CTA (salvar, comentar, seguir) — imagePrompt: cena motivacional de encerramento
 
 Retorne APENAS JSON válido:
-{"slides":[{"title":"...","subtitle":"...","imagePrompt":"..."}, ...]}
-Array com EXATAMENTE ${slideCount} itens.`,
+{"slides":[{"title":"...","subtitle":"...","imagePrompt":"..."}, ...],"caption":"..."}
+Array de slides com EXATAMENTE ${slideCount} itens.
+"caption": legenda pronta para Instagram, 150-300 caracteres, gancho forte no início, CTA claro no final, 5-8 hashtags relevantes ao tema.`,
         },
         {
           role: 'user',
@@ -154,9 +162,9 @@ Array com EXATAMENTE ${slideCount} itens.`,
     });
 
     const rawText = structureResponse.choices[0].message.content || '';
-    const parsed = safeParseSlides(rawText);
+    const parsed = safeParseCarousel(rawText);
 
-    if (!parsed || parsed.length === 0) {
+    if (!parsed || parsed.slides.length === 0) {
       return NextResponse.json({
         slides: withIds(fallbackSlides(topic, tone, slideCount)),
         source: 'fallback',
@@ -164,7 +172,8 @@ Array com EXATAMENTE ${slideCount} itens.`,
     }
 
     return NextResponse.json({
-      slides: withIds(parsed.slice(0, slideCount)),
+      slides: withIds(parsed.slides.slice(0, slideCount)),
+      caption: parsed.caption,
       source: 'ai',
     });
   } catch (err: unknown) {

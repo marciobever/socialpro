@@ -57,6 +57,53 @@ ALTER TABLE social_connections ENABLE ROW LEVEL SECURITY;
 -- Nenhuma política para usuários anônimos = tabela fechada para o front
 
 -- ============================================================
+-- Tabela de carrosséis gerados
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS carousels (
+  id                UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+
+  -- Identidade do usuário (email vindo do NextAuth)
+  user_id           TEXT        NOT NULL,
+
+  -- Metadados da geração
+  topic             TEXT        NOT NULL,
+  tone              TEXT        NOT NULL DEFAULT 'autoridade',
+  style             TEXT        NOT NULL DEFAULT 'lifestyle',
+  slide_count       INT         NOT NULL DEFAULT 5,
+
+  -- Conteúdo
+  slides            JSONB       NOT NULL DEFAULT '[]',
+  caption           TEXT,
+  cover_image_url   TEXT,
+
+  -- Estado
+  status            TEXT        NOT NULL DEFAULT 'draft'
+                    CHECK (status IN ('draft', 'published')),
+  platform          TEXT        NOT NULL DEFAULT 'instagram',
+  published_at      TIMESTAMPTZ,
+
+  -- Timestamps
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_carousels_user_id
+  ON carousels (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_carousels_created_at
+  ON carousels (user_id, created_at DESC);
+
+-- Trigger de updated_at (reutiliza a função criada acima)
+CREATE OR REPLACE TRIGGER trg_carousels_updated_at
+  BEFORE UPDATE ON carousels
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- RLS
+ALTER TABLE carousels ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================
 -- Storage bucket para imagens dos carrosséis
 -- Execute também no dashboard: Storage → New bucket
 -- ============================================================

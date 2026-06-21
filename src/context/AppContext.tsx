@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import type { PlatformType, ToneType, Slide, EditorialItem, CarouselStyleModel, WatermarkType } from '../types';
 
 interface AppContextType {
@@ -51,6 +51,7 @@ interface AppContextType {
   handleAIGenerate: () => Promise<void>;
   handleGenerateCarousel: () => Promise<void>;
   handleRegenerateSlideImage: (slideId: string, title: string, subtitle: string, imagePrompt: string) => Promise<void>;
+  handleRegenerateAllImages: () => Promise<void>;
   handleRefineCaption: () => Promise<void>;
   handleGenerateTextPost: () => Promise<void>;
   handleSelectItem: (item: EditorialItem) => void;
@@ -120,6 +121,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [isGeneratingCarousel, setIsGeneratingCarousel] = useState<boolean>(false);
   const [lastCarouselSource, setLastCarouselSource] = useState<'ai' | 'fallback' | null>(null);
+  const currentCarouselIdRef = useRef<string | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [scheduledItems, setScheduledItems] = useState<EditorialItem[]>(INITIAL_CALENDAR_ITEMS);
   const [selectedItemId, setSelectedItemId] = useState<string>('c4');
 
@@ -152,62 +155,87 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const styleDesc = STYLE_PROMPTS[style];
     const cleanHandle = handle || '@socialpro';
     return (
-      `Instagram carousel slide. ` +
-      `Title text to display: "${title}". ` +
-      `Subtitle text to display: "${subtitle}". ` +
+      `Instagram carousel slide, portrait 4:5 format, professional social media design. ` +
       `Visual scene: ${imagePrompt || 'cinematic illustration related to the slide topic'}. ` +
       `Visual style: ${styleDesc}. ` +
-      `Clean bold white typography overlaid on the scene. ` +
-      `Include small "${cleanHandle}" watermark at bottom. ` +
-      `Professional social media graphic design, portrait format 4:5.`
+      `Typography: large bold white title text "${title}" placed in the upper third of the image; ` +
+      `smaller white subtitle text "${subtitle}" centered below the title with clear line spacing; ` +
+      `high contrast legible text, semi-transparent dark overlay behind text for readability if needed. ` +
+      `Small watermark "${cleanHandle}" at the very bottom center in subtle white. ` +
+      `Clean composition, no extra UI elements, no borders.`
     );
   };
 
-  // style + handle + referenceImage are passed explicitly — locked at generation time
-  const generateSlideImages = useCallback(
-    async (slidesToProcess: Slide[], style: CarouselStyleModel, handle: string, refImage?: string | null) => {
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, []);
+
+  const startPolling = useCallback((carouselId: string, slideIds: string[]) => {
+    stopPolling();
+    currentCarouselIdRef.current = carouselId;
+    let polls = 0;
+
+    pollingRef.current = setInterval(async () => {
+      polls++;
+      // Stop after 3 min or if a new carousel replaced this one
+      if (polls > 90 || currentCarouselIdRef.current !== carouselId) {
+        stopPolling();
+        setSlides(prev => prev.map(s => ({ ...s, isGeneratingImage: false })));
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/carousels/${carouselId}`);
+        if (!res.ok) return;
+        const { carousel } = await res.json();
+        const dbSlides: Slide[] = carousel?.slides ?? [];
+
+        setSlides(prev => {
+          let changed = false;
+          const next = prev.map(s => {
+            const db = dbSlides.find(d => d.id === s.id);
+            if (db?.imageUrl && !s.imageUrl) {
+              changed = true;
+              return { ...s, imageUrl: db.imageUrl, isGeneratingImage: false };
+            }
+            return s;
+          });
+          return changed ? next : prev;
+        });
+
+        const allDone = slideIds.every(id => dbSlides.find(s => s.id === id)?.imageUrl);
+        if (allDone) stopPolling();
+      } catch { /* silent */ }
+    }, 2000);
+  }, [stopPolling]);
+
+  // Fallback: direct API generation (used when referenceImage is set)
+  const generateSlideImagesDirect = useCallback(
+    async (slidesToProcess: Slide[], style: CarouselStyleModel, handle: string, refImage: string) => {
       const BATCH = 2;
       for (let i = 0; i < slidesToProcess.length; i += BATCH) {
         const chunk = slidesToProcess.slice(i, i + BATCH);
         await Promise.allSettled(
           chunk.map(async (slide) => {
-            const prompt = buildImagePrompt(
-              slide.title,
-              slide.subtitle,
-              slide.imagePrompt || '',
-              style,
-              handle,
-            );
-
-            setSlides((prev) =>
-              prev.map((s) => (s.id === slide.id ? { ...s, isGeneratingImage: true } : s))
-            );
-
+            const prompt = buildImagePrompt(slide.title, slide.subtitle, slide.imagePrompt || '', style, handle);
+            setSlides(prev => prev.map(s => s.id === slide.id ? { ...s, isGeneratingImage: true } : s));
             try {
               const resp = await fetch('/api/ai/image', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, referenceImage: refImage ?? null }),
+                body: JSON.stringify({ prompt, referenceImage: refImage }),
               });
-
               if (resp.ok) {
                 const data = await resp.json();
-                setSlides((prev) =>
-                  prev.map((s) =>
-                    s.id === slide.id
-                      ? { ...s, imageUrl: data.imageUrl, isGeneratingImage: false }
-                      : s
-                  )
-                );
+                setSlides(prev => prev.map(s => s.id === slide.id ? { ...s, imageUrl: data.imageUrl, isGeneratingImage: false } : s));
               } else {
-                setSlides((prev) =>
-                  prev.map((s) => (s.id === slide.id ? { ...s, isGeneratingImage: false } : s))
-                );
+                setSlides(prev => prev.map(s => s.id === slide.id ? { ...s, isGeneratingImage: false } : s));
               }
             } catch {
-              setSlides((prev) =>
-                prev.map((s) => (s.id === slide.id ? { ...s, isGeneratingImage: false } : s))
-              );
+              setSlides(prev => prev.map(s => s.id === slide.id ? { ...s, isGeneratingImage: false } : s));
             }
           })
         );
@@ -286,7 +314,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const response = await fetch('/api/ai/carousel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, tone, aiBio: brandKit.aiBio, slideCount: carouselSlideCount }),
+        body: JSON.stringify({ topic, tone, aiBio: brandKit.aiBio, slideCount: carouselSlideCount, styleDesc: STYLE_PROMPTS[lockedStyle] }),
       });
 
       if (!response.ok) throw new Error('Falha ao gerar o carrossel.');
@@ -295,15 +323,50 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const generated: Slide[] = Array.isArray(data?.slides) ? data.slides : [];
 
       if (generated.length) {
-        setSlides(generated);
+        // Mark all slides as generating images
+        setSlides(generated.map(s => ({ ...s, isGeneratingImage: true })));
         setActiveSlideIndex(0);
         setLastCarouselSource(data?.source === 'ai' ? 'ai' : 'fallback');
         setContent(
+          data.caption ||
           `${generated[0].title}\n\n${generated[0].subtitle}\n\nDeslize ➡️ e salve este post para não esquecer.\n\n#${tone} #conteudo #socialpro`
         );
 
-        // Locked style + referenceImage — changing chips now has no effect on this batch
-        generateSlideImages(generated, lockedStyle, lockedHandle, lockedRef).catch(console.error);
+        // Save to DB first to get carouselId (needed by Windmill workers)
+        const saveRes = await fetch('/api/carousels', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic, tone, style: lockedStyle, slideCount: carouselSlideCount,
+            slides: generated, caption: data.caption ?? null, platform: 'instagram',
+          }),
+        });
+
+        if (saveRes.ok) {
+          const { id: carouselId } = await saveRes.json();
+
+          currentCarouselIdRef.current = carouselId;
+
+          if (lockedRef) {
+            // Reference image: use direct API (Windmill doesn't support it yet)
+            generateSlideImagesDirect(generated, lockedStyle, lockedHandle, lockedRef).catch(console.error);
+          } else {
+            // Enqueue all slides to Windmill workers
+            const slidePrompts = generated.map((s, i) => ({
+              slideIndex: i,
+              prompt: buildImagePrompt(s.title, s.subtitle, s.imagePrompt || '', lockedStyle, lockedHandle),
+            }));
+            fetch(`/api/carousels/${carouselId}/generate-images`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ slides: slidePrompts, locale: 'pt' }),
+            }).catch(console.error);
+            startPolling(carouselId, generated.map(s => s.id));
+          }
+        } else {
+          // DB save failed — fallback to direct API
+          generateSlideImagesDirect(generated, lockedStyle, lockedHandle, lockedRef ?? '').catch(console.error);
+        }
       }
     } catch {
       // Local fallback
@@ -324,10 +387,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         localSlides.push({ id: `lf${i + 1}-${Math.random().toString(36).slice(2, 8)}`, title: `0${i}. PONTO-CHAVE`, subtitle: `Aplique este passo sobre ${short} hoje mesmo.`, background: colors[i % colors.length] });
       }
       localSlides.push({ id: `lf${count}-${Math.random().toString(36).slice(2, 8)}`, title: 'SALVE ESTE POST', subtitle: `Curtiu? Comente "EU QUERO" e siga para mais sobre ${short}.`, background: colors[(count - 1) % colors.length] });
-      setSlides(localSlides);
+      setSlides(localSlides.map(s => ({ ...s, isGeneratingImage: true })));
       setActiveSlideIndex(0);
       setLastCarouselSource('fallback');
-      generateSlideImages(localSlides, lockedStyle, lockedHandle, lockedRef).catch(console.error);
+      generateSlideImagesDirect(localSlides, lockedStyle, lockedHandle, lockedRef ?? '').catch(console.error);
     } finally {
       setIsGeneratingCarousel(false);
     }
@@ -366,6 +429,34 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     },
     [styleModel, brandKit.brandHandle]
   );
+
+  const handleRegenerateAllImages = useCallback(async () => {
+    const lockedStyle  = styleModel;
+    const lockedHandle = brandKit.brandHandle;
+    const lockedRef    = referenceImage;
+    const carouselId   = currentCarouselIdRef.current;
+
+    setSlides(prev => prev.map(s => ({ ...s, isGeneratingImage: true, imageUrl: undefined })));
+
+    if (lockedRef || !carouselId) {
+      // No carouselId or has reference → direct API
+      await generateSlideImagesDirect(slides, lockedStyle, lockedHandle, lockedRef ?? '');
+      return;
+    }
+
+    const slidePrompts = slides.map((s, i) => ({
+      slideIndex: i,
+      prompt: buildImagePrompt(s.title, s.subtitle, s.imagePrompt || '', lockedStyle, lockedHandle),
+    }));
+
+    fetch(`/api/carousels/${carouselId}/generate-images`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slides: slidePrompts, locale: 'pt' }),
+    }).catch(console.error);
+
+    startPolling(carouselId, slides.map(s => s.id));
+  }, [styleModel, brandKit.brandHandle, referenceImage, slides, generateSlideImagesDirect, startPolling]);
 
   const handleRefineCaption = async () => {
     if (!content.trim() || isGenerating) return;
@@ -459,6 +550,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       handleAIGenerate,
       handleGenerateCarousel,
       handleRegenerateSlideImage,
+      handleRegenerateAllImages,
       handleRefineCaption,
       handleGenerateTextPost,
       handleSelectItem,

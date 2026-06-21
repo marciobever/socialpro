@@ -2,6 +2,7 @@
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { BrainCircuit, KeyRound, Mail, ArrowRight, Loader2 } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 
@@ -16,22 +17,32 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+function FacebookIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg">
+      <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+    </svg>
+  );
+}
+
 function LoginForm() {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [loading, setLoading]         = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError]       = useState('');
+  const [fbLoading, setFbLoading]     = useState(false);
+  const [error, setError]             = useState('');
 
   const router       = useRouter();
   const searchParams = useSearchParams();
   const { setPlanName } = useAppContext();
+  const t = useTranslations('login');
 
   const planQuery = searchParams.get('plan') || 'starter';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) { setError('Preencha todos os campos.'); return; }
+    if (!email.trim() || !password.trim()) { setError(t('errors.fillAllFields')); return; }
     setError('');
     setLoading(true);
     try {
@@ -41,7 +52,7 @@ function LoginForm() {
         redirect: false,
       });
       if (result?.error) {
-        setError('E-mail ou senha inválidos.');
+        setError(t('errors.invalidCredentials'));
         setLoading(false);
         return;
       }
@@ -49,7 +60,7 @@ function LoginForm() {
       setPlanName(names[planQuery] ?? 'Starter Creator');
       router.push('/app/dashboard');
     } catch {
-      setError('Erro ao conectar. Tente novamente.');
+      setError(t('errors.connectionError'));
       setLoading(false);
     }
   };
@@ -57,6 +68,11 @@ function LoginForm() {
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     await signIn('google', { callbackUrl: '/app/dashboard' });
+  };
+
+  const handleFacebookLogin = async () => {
+    setFbLoading(true);
+    await signIn('facebook', { callbackUrl: '/app/dashboard' });
   };
 
   return (
@@ -78,27 +94,39 @@ function LoginForm() {
           <h2 className="text-2xl font-bold tracking-tight text-white">
             Social<span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">Pro</span>
           </h2>
-          <p className="text-xs text-dark-muted">Entre na sua conta para começar</p>
+          <p className="text-xs text-dark-muted">{t('tagline')}</p>
         </div>
 
         <div className="glass-panel rounded-3xl p-8 shadow-2xl space-y-5 border border-white/5 bg-[#0d0f17]/70">
 
-          {/* Google button */}
-          <button
-            onClick={handleGoogleLogin}
-            disabled={googleLoading || loading}
-            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-dark-border bg-white/5 hover:bg-white/10 text-sm font-semibold text-dark-text transition-all disabled:opacity-50"
-          >
-            {googleLoading
-              ? <Loader2 className="h-4 w-4 animate-spin text-dark-muted" />
-              : <GoogleIcon className="h-4 w-4" />}
-            Continuar com Google
-          </button>
+          {/* OAuth buttons */}
+          <div className="space-y-2">
+            <button
+              onClick={handleGoogleLogin}
+              disabled={googleLoading || fbLoading || loading}
+              className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-dark-border bg-white/5 hover:bg-white/10 text-sm font-semibold text-dark-text transition-all disabled:opacity-50"
+            >
+              {googleLoading
+                ? <Loader2 className="h-4 w-4 animate-spin text-dark-muted" />
+                : <GoogleIcon className="h-4 w-4" />}
+              {t('continueWithGoogle')}
+            </button>
+            <button
+              onClick={handleFacebookLogin}
+              disabled={googleLoading || fbLoading || loading}
+              className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-[#1877F2]/30 bg-[#1877F2]/10 hover:bg-[#1877F2]/20 text-sm font-semibold text-dark-text transition-all disabled:opacity-50"
+            >
+              {fbLoading
+                ? <Loader2 className="h-4 w-4 animate-spin text-dark-muted" />
+                : <FacebookIcon className="h-4 w-4" />}
+              {t('continueWithFacebook')}
+            </button>
+          </div>
 
           {/* Divider */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-dark-border" />
-            <span className="text-[11px] text-dark-muted font-medium">ou entre com e-mail</span>
+            <span className="text-[11px] text-dark-muted font-medium">{t('orWithEmail')}</span>
             <div className="flex-1 h-px bg-dark-border" />
           </div>
 
@@ -111,28 +139,28 @@ function LoginForm() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1">
               <label className="text-[11px] font-semibold text-dark-muted flex items-center gap-1.5">
-                <Mail className="h-3.5 w-3.5" /> E-mail
+                <Mail className="h-3.5 w-3.5" /> {t('email')}
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="interactive-input"
-                placeholder="nome@email.com"
+                placeholder={t('emailPlaceholder')}
                 disabled={loading}
               />
             </div>
 
             <div className="space-y-1">
               <label className="text-[11px] font-semibold text-dark-muted flex items-center gap-1.5">
-                <KeyRound className="h-3.5 w-3.5" /> Senha
+                <KeyRound className="h-3.5 w-3.5" /> {t('password')}
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className="interactive-input"
-                placeholder="••••••••"
+                placeholder={t('passwordPlaceholder')}
                 disabled={loading}
               />
             </div>
@@ -143,14 +171,14 @@ function LoginForm() {
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan shadow-[0_0_16px_rgba(139,92,246,0.3)] hover:shadow-[0_0_24px_rgba(139,92,246,0.5)] transition-all disabled:opacity-50"
             >
               {loading
-                ? <><Loader2 className="h-4 w-4 animate-spin" />Entrando...</>
-                : <>Entrar no Estúdio <ArrowRight className="h-4 w-4" /></>}
+                ? <><Loader2 className="h-4 w-4 animate-spin" />{t('signingIn')}</>
+                : <>{t('signIn')} <ArrowRight className="h-4 w-4" /></>}
             </button>
           </form>
 
           {planQuery !== 'starter' && (
             <p className="text-[10px] text-accent-cyan text-center font-semibold">
-              Plano selecionado: {planQuery.toUpperCase()}
+              {t('selectedPlan')} {planQuery.toUpperCase()}
             </p>
           )}
         </div>

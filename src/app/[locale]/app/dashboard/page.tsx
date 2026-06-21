@@ -1,5 +1,6 @@
 "use client";
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { useAppContext } from '@/context/AppContext';
 import { CarouselCard } from '@/components/cards/CarouselCard';
 import { TextPostCard } from '@/components/cards/TextPostCard';
@@ -60,29 +61,28 @@ function StylePicker({ styleModel, onSelect, disabled }: {
   disabled: boolean;
 }) {
   const isAvatar = AVATAR_IDS.includes(styleModel);
+  const tStyles = useTranslations('styles');
+  const tDash   = useTranslations('dashboard');
 
   return (
     <div className="glass-panel rounded-2xl border border-dark-border px-4 py-3 space-y-2.5 animate-fade-in" style={{ animationDelay: '80ms' }}>
-      {/* Linha 1: Estilos foto + chip "Infantil" gateway */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[9px] font-bold text-dark-muted uppercase tracking-wider w-8 flex-shrink-0">Estilo</span>
+        <span className="text-[9px] font-bold text-dark-muted uppercase tracking-wider w-8 flex-shrink-0">{tDash('styleLabel')}</span>
         {PHOTO_STYLES.map(s => (
-          <StyleChip key={s.id} {...s} active={styleModel === s.id} disabled={disabled} onClick={() => onSelect(s.id)} />
+          <StyleChip key={s.id} {...s} name={tStyles(s.id)} active={styleModel === s.id} disabled={disabled} onClick={() => onSelect(s.id)} />
         ))}
-        {/* Infantil como gateway */}
         <StyleChip
-          id="infantil" name="Infantil" swatch="linear-gradient(135deg,#fb923c,#facc15,#4ade80)"
+          id="infantil" name={tStyles('infantil')} swatch="linear-gradient(135deg,#fb923c,#facc15,#4ade80)"
           active={isAvatar} disabled={disabled}
           onClick={() => onSelect(isAvatar ? 'lifestyle' : 'infantil')}
         />
       </div>
 
-      {/* Linha 2: Sub-estilos avatar — só quando Infantil está ativo */}
       {isAvatar && (
         <div className="flex items-center gap-2 flex-wrap animate-fade-in">
-          <span className="text-[9px] font-bold text-dark-muted uppercase tracking-wider w-8 flex-shrink-0">Avatar</span>
+          <span className="text-[9px] font-bold text-dark-muted uppercase tracking-wider w-8 flex-shrink-0">{tDash('avatarLabel')}</span>
           {AVATAR_STYLES.map(s => (
-            <StyleChip key={s.id} {...s} active={styleModel === s.id} disabled={disabled} onClick={() => onSelect(s.id)} />
+            <StyleChip key={s.id} {...s} name={tStyles(s.id)} active={styleModel === s.id} disabled={disabled} onClick={() => onSelect(s.id)} />
           ))}
         </div>
       )}
@@ -111,6 +111,8 @@ const GRADIENTS = [
 
 function PublishModal({ platform, onClose }: { platform: PlatformType; onClose: () => void }) {
   const label = FORMATS.find(f => f.id === platform)?.label ?? platform;
+  const tPub = useTranslations('publish');
+  const publishSteps = [tPub('connect'), tPub('configure'), tPub('authorize')];
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="relative w-full max-w-sm glass-panel-heavy rounded-2xl border border-dark-border p-5 space-y-4" onClick={e => e.stopPropagation()}>
@@ -120,12 +122,12 @@ function PublishModal({ platform, onClose }: { platform: PlatformType; onClose: 
             <Send className="h-4 w-4 text-accent-purple" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-dark-text">Publicar no {label}</h3>
-            <p className="text-[10px] text-dark-muted">Passos necessários</p>
+            <h3 className="text-sm font-bold text-dark-text">{tPub('title')} {label}</h3>
+            <p className="text-[10px] text-dark-muted">{tPub('subtitle')}</p>
           </div>
         </div>
         <div className="space-y-2">
-          {['Conectar conta Business/Creator', 'Configurar App no Meta Developer', 'Autorizar permissões de publicação'].map((s, i) => (
+          {publishSteps.map((s, i) => (
             <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-lg bg-dark-border/30 border border-dark-border">
               <Clock className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
               <span className="text-xs text-dark-muted">{s}</span>
@@ -134,19 +136,19 @@ function PublishModal({ platform, onClose }: { platform: PlatformType; onClose: 
         </div>
         <div className="p-3 rounded-xl bg-accent-cyan/5 border border-accent-cyan/15 flex gap-2">
           <Info className="h-3.5 w-3.5 text-accent-cyan flex-shrink-0 mt-0.5" />
-          <p className="text-[10px] text-dark-muted leading-relaxed">Publicação automática em breve. Por ora, exporte os slides e a legenda copiada.</p>
+          <p className="text-[10px] text-dark-muted leading-relaxed">{tPub('comingSoon')}</p>
         </div>
-        <button onClick={onClose} className="w-full py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan">Entendido</button>
+        <button onClick={onClose} className="w-full py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan">{tPub('understood')}</button>
       </div>
     </div>
   );
 }
 
 function SlideCard({
-  slide, index, isActive, total,
+  slide, index, isActive, total, isOutdated,
   onClick, onDelete, onRegenerate,
 }: {
-  slide: Slide; index: number; isActive: boolean; total: number;
+  slide: Slide; index: number; isActive: boolean; total: number; isOutdated: boolean;
   onClick: () => void; onDelete: () => void; onRegenerate: () => void;
 }) {
   return (
@@ -182,6 +184,11 @@ function SlideCard({
         <span className="absolute top-2 left-2 text-[9px] font-black text-white bg-black/60 backdrop-blur-sm rounded-md px-1.5 py-0.5 leading-tight">
           {index + 1}/{total}
         </span>
+
+        {/* Outdated image indicator */}
+        {isOutdated && (
+          <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]" title="Texto editado — regenere a imagem" />
+        )}
 
         {/* Regenerate overlay */}
         {slide.imagePrompt && (
@@ -220,6 +227,8 @@ function SlideCard({
 }
 
 export default function DashboardPage() {
+  const t = useTranslations('dashboard');
+  const tPublish = useTranslations('publish');
   const {
     platform, setPlatform,
     tone, setTone,
@@ -234,13 +243,15 @@ export default function DashboardPage() {
     carouselSlideCount, setCarouselSlideCount,
     referenceImage, setReferenceImage,
     isGeneratingCarousel, lastCarouselSource,
-    handleGenerateCarousel, handleRegenerateSlideImage,
+    handleGenerateCarousel, handleRegenerateSlideImage, handleRegenerateAllImages,
     handleRefineCaption, handleGenerateTextPost,
   } = useAppContext();
 
-  const [copied,        setCopied]        = React.useState(false);
-  const [showPublish,   setShowPublish]   = React.useState(false);
-  const [isExportingAll, setIsExportingAll] = React.useState(false);
+  const [copied,           setCopied]           = React.useState(false);
+  const [showPublish,      setShowPublish]       = React.useState(false);
+  const [isExportingAll,   setIsExportingAll]   = React.useState(false);
+  const [isRegeneratingAll, setIsRegeneratingAll] = React.useState(false);
+  const [outdatedSlideIds, setOutdatedSlideIds] = React.useState<Set<string>>(new Set());
 
   // Instagram publish state machine
   type PublishState = 'idle' | 'publishing' | 'success' | 'error';
@@ -321,6 +332,22 @@ export default function DashboardPage() {
     }
   };
 
+  const handleRegenerateSlide = (slideId: string, title: string, subtitle: string, imagePrompt: string) => {
+    setOutdatedSlideIds(prev => { const next = new Set(prev); next.delete(slideId); return next; });
+    handleRegenerateSlideImage(slideId, title, subtitle, imagePrompt);
+  };
+
+  const handleRegenerateAll = async () => {
+    if (isRegeneratingAll) return;
+    setIsRegeneratingAll(true);
+    setOutdatedSlideIds(new Set());
+    try {
+      await handleRegenerateAllImages();
+    } finally {
+      setIsRegeneratingAll(false);
+    }
+  };
+
   const handleAddSlide = () => {
     if (slides.length >= 8) return;
     const newSlide: Slide = {
@@ -328,6 +355,7 @@ export default function DashboardPage() {
       title: `Slide ${slides.length + 1}`,
       subtitle: 'Texto de apoio do slide.',
       background: GRADIENTS[slides.length % GRADIENTS.length],
+      imagePrompt: carouselTopic ? `Professional illustration related to "${carouselTopic}"` : 'Abstract professional illustration, dark premium aesthetic',
     };
     setSlides([...slides, newSlide]);
     setActiveSlideIndex(slides.length);
@@ -364,6 +392,9 @@ export default function DashboardPage() {
           })}
         </div>
 
+        {/* ── Style picker (Instagram only) — before the generator ── */}
+        {isCarousel && <StylePicker styleModel={styleModel} onSelect={setStyleModel} disabled={isGeneratingCarousel} />}
+
         {/* ── Studio card ── */}
         <div className="animate-fade-in" style={{ animationDelay: '60ms' }}>
         {isCarousel ? (
@@ -389,9 +420,6 @@ export default function DashboardPage() {
         )}
         </div>
 
-        {/* ── Style picker (Instagram only) ── */}
-        {isCarousel && <StylePicker styleModel={styleModel} onSelect={setStyleModel} disabled={isGeneratingCarousel} />}
-
         {/* ── Slides grid (only for Instagram) ── */}
         {isCarousel && (
           <div className="glass-panel rounded-2xl border border-dark-border overflow-hidden animate-fade-in" style={{ animationDelay: '120ms' }}>
@@ -399,22 +427,19 @@ export default function DashboardPage() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-dark-border">
               <div className="flex items-center gap-2.5">
-                <span className="text-xs font-bold text-dark-text uppercase tracking-wider">Slides</span>
+                <span className="text-xs font-bold text-dark-text uppercase tracking-wider">{t('slides')}</span>
                 <span className="text-[10px] text-dark-muted bg-dark-border/60 px-2 py-0.5 rounded-full">
-                  {slides.length} · {imagesReady} com imagem
+                  {slides.length} · {imagesReady} {t('withImage')}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={handleDownloadActive}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border border-dark-border text-dark-muted hover:text-dark-text transition-all">
-                  <Download className="h-3.5 w-3.5" /> Atual
-                </button>
-                <button onClick={handleDownloadAll} disabled={isExportingAll}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-white bg-gradient-to-r from-accent-purple to-accent-cyan disabled:opacity-60 transition-all">
-                  {isExportingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                  Exportar todos
-                </button>
-              </div>
+              <button
+                onClick={handleRegenerateAll}
+                disabled={isRegeneratingAll || isGeneratingCarousel}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border border-dark-border text-dark-muted hover:text-dark-text hover:border-accent-purple/40 disabled:opacity-50 transition-all"
+              >
+                {isRegeneratingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                {t('regenerateAll')}
+              </button>
             </div>
 
             <div className="p-4 space-y-3">
@@ -447,9 +472,10 @@ export default function DashboardPage() {
                   <SlideCard
                     key={slide.id}
                     slide={slide} index={idx} isActive={idx === activeSlideIndex} total={slides.length}
+                    isOutdated={outdatedSlideIds.has(slide.id)}
                     onClick={() => setActiveSlideIndex(idx)}
                     onDelete={() => handleDeleteSlide(idx)}
-                    onRegenerate={() => handleRegenerateSlideImage(slide.id, slide.title, slide.subtitle, slide.imagePrompt || '')}
+                    onRegenerate={() => handleRegenerateSlide(slide.id, slide.title, slide.subtitle, slide.imagePrompt || '')}
                   />
                 ))}
 
@@ -458,7 +484,7 @@ export default function DashboardPage() {
                   <button onClick={handleAddSlide}
                     className="aspect-[4/5] rounded-2xl border-2 border-dashed border-dark-border hover:border-accent-purple/50 flex flex-col items-center justify-center gap-2 transition-all text-dark-muted hover:text-accent-purple group">
                     <Plus className="h-6 w-6 group-hover:scale-110 transition-transform" />
-                    <span className="text-[10px] font-semibold">Novo slide</span>
+                    <span className="text-[10px] font-semibold">{t('newSlide')}</span>
                   </button>
                 )}
               </div>
@@ -470,14 +496,20 @@ export default function DashboardPage() {
                   <input
                     type="text"
                     value={activeSlide.title}
-                    onChange={e => setSlides(slides.map((s, i) => i === activeSlideIndex ? { ...s, title: e.target.value } : s))}
+                    onChange={e => {
+                      setSlides(slides.map((s, i) => i === activeSlideIndex ? { ...s, title: e.target.value } : s));
+                      if (activeSlide.imageUrl) setOutdatedSlideIds(prev => new Set([...prev, activeSlide.id]));
+                    }}
                     className="interactive-input flex-1 py-2 text-sm font-semibold"
                     placeholder={`Título do slide ${activeSlideIndex + 1}`}
                   />
                   <input
                     type="text"
                     value={activeSlide.subtitle}
-                    onChange={e => setSlides(slides.map((s, i) => i === activeSlideIndex ? { ...s, subtitle: e.target.value } : s))}
+                    onChange={e => {
+                      setSlides(slides.map((s, i) => i === activeSlideIndex ? { ...s, subtitle: e.target.value } : s));
+                      if (activeSlide.imageUrl) setOutdatedSlideIds(prev => new Set([...prev, activeSlide.id]));
+                    }}
                     className="interactive-input flex-1 py-2 text-sm text-dark-muted"
                     placeholder="Texto de apoio"
                   />
@@ -496,22 +528,22 @@ export default function DashboardPage() {
           {isCarousel && (
             <div className="flex-1 glass-panel rounded-2xl border border-dark-border p-3 flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-dark-text">Legenda</span>
-                <span className="text-[10px] text-dark-muted tabular-nums">{content.length} car.</span>
+                <span className="text-[11px] font-semibold text-dark-text">{t('caption')}</span>
+                <span className="text-[10px] text-dark-muted tabular-nums">{content.length} {t('chars')}</span>
               </div>
               <textarea
                 value={content} onChange={e => setContent(e.target.value)}
                 className="interactive-input w-full h-16 resize-none py-2 text-[11px] leading-relaxed"
-                placeholder="Legenda gerada pela IA aparece aqui..."
+                placeholder={t('captionPlaceholder')}
               />
               <div className="flex gap-2">
                 <button onClick={handleRefineCaption} disabled={isGenerating || !content.trim()}
                   className="btn-press flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan disabled:opacity-50 hover:shadow-[0_0_14px_rgba(139,92,246,0.35)] transition-all">
-                  {isGenerating ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Refinando...</> : <><Wand2 className="h-3.5 w-3.5" />Refinar</>}
+                  {isGenerating ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />{t('refining')}</> : <><Wand2 className="h-3.5 w-3.5" />{t('refine')}</>}
                 </button>
                 <button onClick={handleCopyCaption} disabled={!content.trim()}
                   className="btn-press flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-semibold border border-dark-border text-dark-muted hover:text-dark-text disabled:opacity-50 transition-all">
-                  {copied ? <><Check className="h-3.5 w-3.5 text-emerald-400" />Copiado!</> : <><Copy className="h-3.5 w-3.5" />Copiar</>}
+                  {copied ? <><Check className="h-3.5 w-3.5 text-emerald-400" />{t('copied')}</> : <><Copy className="h-3.5 w-3.5" />{t('copy')}</>}
                 </button>
               </div>
             </div>
@@ -520,7 +552,7 @@ export default function DashboardPage() {
           {/* Actions panel */}
           <div className={`${isCarousel ? 'lg:w-64 flex-shrink-0' : 'w-full'} glass-panel rounded-2xl border border-dark-border p-3 flex flex-col gap-2.5`}>
 
-            <p className="text-[11px] font-bold text-dark-text px-0.5">Ações</p>
+            <p className="text-[11px] font-bold text-dark-text px-0.5">{t('actions')}</p>
 
             {/* Download all */}
             <button
@@ -529,8 +561,8 @@ export default function DashboardPage() {
               className="btn-press w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[11px] font-bold border border-dark-border text-dark-text hover:border-accent-purple/40 hover:bg-accent-purple/5 disabled:opacity-40 transition-all"
             >
               {isExportingAll
-                ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Baixando...</>
-                : <><Download className="h-3.5 w-3.5" />Baixar imagens ({slides.filter(s => s.imageUrl).length}/{slides.length})</>}
+                ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />{t('downloading')}</>
+                : <><Download className="h-3.5 w-3.5" />{t('downloadImages')} ({slides.filter(s => s.imageUrl).length}/{slides.length})</>}
             </button>
 
             {/* Publish to Instagram */}
@@ -545,10 +577,10 @@ export default function DashboardPage() {
                   : 'bg-gradient-to-r from-accent-purple to-accent-cyan shadow-[0_0_14px_rgba(139,92,246,0.25)] hover:shadow-[0_0_24px_rgba(139,92,246,0.5)] disabled:shadow-none'
               }`}
             >
-              {publishState === 'publishing' && <><Loader2 className="h-3.5 w-3.5 animate-spin" />Publicando...</>}
-              {publishState === 'success'    && <><Check className="h-3.5 w-3.5" />Publicado!</>}
-              {publishState === 'error'      && <><X className="h-3.5 w-3.5" />Falhou</>}
-              {publishState === 'idle'       && <><Send className="h-3.5 w-3.5" />Postar no Instagram</>}
+              {publishState === 'publishing' && <><Loader2 className="h-3.5 w-3.5 animate-spin" />{t('publishing')}</>}
+              {publishState === 'success'    && <><Check className="h-3.5 w-3.5" />{t('published')}</>}
+              {publishState === 'error'      && <><X className="h-3.5 w-3.5" />{t('failed')}</>}
+              {publishState === 'idle'       && <><Send className="h-3.5 w-3.5" />{t('postToInstagram')}</>}
             </button>
 
             {/* Feedback messages */}
@@ -565,12 +597,12 @@ export default function DashboardPage() {
                 className="flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 font-semibold animate-fade-in px-0.5 transition-colors"
               >
                 <ExternalLink className="h-3 w-3" />
-                Ver post no Instagram
+                {t('viewOnInstagram')}
               </a>
             )}
             {!readyToPublish && publishState === 'idle' && (
               <p className="text-[10px] text-dark-muted px-0.5">
-                Gere e aguarde as imagens para habilitar.
+                {t('awaitImages')}
               </p>
             )}
           </div>
