@@ -2,7 +2,17 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import type { PlatformType, ToneType, Slide, EditorialItem, CarouselStyleModel, WatermarkType } from '../types';
 
+interface SubscriptionState {
+  status: string;
+  plan_id: string;
+  carousel_limit: number;
+  carousels_used: number;
+  period_end: string | null;
+}
+
 interface AppContextType {
+  subscription: SubscriptionState | null;
+  loadSubscription: () => Promise<void>;
   brandKit: {
     brandName: string;
     brandHandle: string;
@@ -56,6 +66,8 @@ interface AppContextType {
   handleGenerateTextPost: () => Promise<void>;
   handleSelectItem: (item: EditorialItem) => void;
   handleSelectIdea: (hook: string, structure: string) => void;
+  upgradeModalOpen: boolean;
+  setUpgradeModalOpen: (open: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -103,6 +115,20 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     aiBio: 'Estrategista de Growth e Criador de Conteúdo Digital.',
   });
 
+  const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
+
+  const loadSubscription = async () => {
+    try {
+      const res = await fetch('/api/subscription');
+      if (res.ok) {
+        const { subscription: sub } = await res.json();
+        setSubscription(sub);
+      }
+    } catch { /* silent */ }
+  };
+
+  React.useEffect(() => { loadSubscription(); }, []);
+
   const [planName, setPlanName] = useState<string>('Starter Creator');
   const [styleModel, setStyleModel] = useState<CarouselStyleModel>('lifestyle');
   const [watermarkType, setWatermarkType] = useState<WatermarkType>('both');
@@ -121,6 +147,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [isGeneratingCarousel, setIsGeneratingCarousel] = useState<boolean>(false);
   const [lastCarouselSource, setLastCarouselSource] = useState<'ai' | 'fallback' | null>(null);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState<boolean>(false);
   const currentCarouselIdRef = useRef<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [scheduledItems, setScheduledItems] = useState<EditorialItem[]>(INITIAL_CALENDAR_ITEMS);
@@ -363,6 +390,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             }).catch(console.error);
             startPolling(carouselId, generated.map(s => s.id));
           }
+        } else if (saveRes.status === 402) {
+          setUpgradeModalOpen(true);
+          setSlides([]);
         } else {
           // DB save failed — fallback to direct API
           generateSlideImagesDirect(generated, lockedStyle, lockedHandle, lockedRef ?? '').catch(console.error);
@@ -398,16 +428,31 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const handleRegenerateSlideImage = useCallback(
     async (slideId: string, title: string, subtitle: string, imagePrompt: string) => {
-      // Intentionally uses CURRENT style — user may have changed it to restyle a single slide
       const prompt = buildImagePrompt(title, subtitle, imagePrompt, styleModel, brandKit.brandHandle);
+      const carouselId = currentCarouselIdRef.current;
+
       setSlides((prev) =>
         prev.map((s) => (s.id === slideId ? { ...s, isGeneratingImage: true, imageUrl: undefined } : s))
       );
+
+      if (carouselId && !referenceImage) {
+        // Route through Windmill — same pipeline as the initial generation
+        const slideIndex = slides.findIndex(s => s.id === slideId);
+        fetch(`/api/carousels/${carouselId}/generate-images`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slides: [{ slideIndex, prompt }] }),
+        }).catch(console.error);
+        startPolling(carouselId, [slideId]);
+        return;
+      }
+
+      // Fallback: direct API (when no carouselId or referenceImage active)
       try {
         const resp = await fetch('/api/ai/image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({ prompt, referenceImage }),
         });
         if (resp.ok) {
           const data = await resp.json();
@@ -427,7 +472,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         );
       }
     },
-    [styleModel, brandKit.brandHandle]
+    [styleModel, brandKit.brandHandle, referenceImage, slides, startPolling]
   );
 
   const handleRegenerateAllImages = useCallback(async () => {
@@ -527,7 +572,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   return (
     <AppContext.Provider value={{
-      brandKit, setBrandKit,
+      subscription, loadSubscription,
+    brandKit, setBrandKit,
       planName, setPlanName: handleLoginSuccess,
       styleModel, setStyleModel,
       watermarkType, setWatermarkType,
@@ -555,6 +601,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       handleGenerateTextPost,
       handleSelectItem,
       handleSelectIdea,
+      upgradeModalOpen, setUpgradeModalOpen,
     }}>
       {children}
     </AppContext.Provider>

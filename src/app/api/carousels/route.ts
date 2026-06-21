@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getSupabase } from '@/lib/supabase';
+import { canGenerate, incrementUsage } from '@/lib/subscription';
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -10,6 +11,15 @@ export async function POST(request: Request) {
   }
 
   const userId = (session.user as { id?: string }).id ?? session.user.email ?? 'unknown';
+
+  // Gate: check subscription usage before saving
+  const usage = await canGenerate(userId);
+  if (!usage.allowed) {
+    return NextResponse.json(
+      { error: usage.reason, used: usage.used, limit: usage.limit },
+      { status: 402 }
+    );
+  }
 
   try {
     const body = await request.json();
@@ -37,6 +47,9 @@ export async function POST(request: Request) {
       .single();
 
     if (error) throw error;
+
+    // Increment usage atomically after successful save
+    await incrementUsage(userId);
 
     return NextResponse.json({ id: data.id });
   } catch (err) {

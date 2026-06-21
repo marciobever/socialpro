@@ -245,6 +245,8 @@ export default function DashboardPage() {
     isGeneratingCarousel, lastCarouselSource,
     handleGenerateCarousel, handleRegenerateSlideImage, handleRegenerateAllImages,
     handleRefineCaption, handleGenerateTextPost,
+    subscription,
+    upgradeModalOpen, setUpgradeModalOpen,
   } = useAppContext();
 
   const [copied,           setCopied]           = React.useState(false);
@@ -391,6 +393,26 @@ export default function DashboardPage() {
             );
           })}
         </div>
+
+        {/* ── Subscription usage bar ── */}
+        {subscription && (
+          <div className="glass-panel rounded-2xl border border-dark-border px-4 py-3 space-y-1.5">
+            <div className="flex items-center justify-between text-[10px]">
+              <span className="text-dark-muted font-semibold">
+                {subscription.carousels_used} de {subscription.carousel_limit} carrosséis usados este mês
+              </span>
+              <span className="text-dark-muted capitalize">
+                {subscription.plan_id === 'intro' ? 'Mês Intro' : subscription.plan_id === 'pro' ? 'Pro' : 'Free'}
+              </span>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-dark-border overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-500"
+                style={{ width: `${Math.min((subscription.carousels_used / Math.max(subscription.carousel_limit, 1)) * 100, 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* ── Style picker (Instagram only) — before the generator ── */}
         {isCarousel && <StylePicker styleModel={styleModel} onSelect={setStyleModel} disabled={isGeneratingCarousel} />}
@@ -609,6 +631,52 @@ export default function DashboardPage() {
         </div>
 
       </div>
+
+      {/* ── Upgrade modal ── */}
+      {upgradeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setUpgradeModalOpen(false)} />
+          <div className="relative glass-panel rounded-3xl border border-dark-border p-6 w-full max-w-sm space-y-5 shadow-2xl animate-fade-in">
+            <button onClick={() => setUpgradeModalOpen(false)} className="absolute top-4 right-4 text-dark-muted hover:text-dark-text transition-colors">
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-accent-purple uppercase tracking-wider">Limite atingido</p>
+              <h2 className="text-xl font-bold text-dark-text leading-tight">
+                Você usou todos os carrosséis do mês
+              </h2>
+              <p className="text-sm text-dark-muted leading-relaxed pt-1">
+                Faça upgrade para o plano Pro e gere até <span className="text-dark-text font-semibold">15 carrosséis por mês</span> por apenas R$29,99.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-accent-purple/30 bg-accent-purple/10 p-4 space-y-2">
+              <p className="text-xs font-bold text-dark-text">Plano Pro — R$29,99/mês</p>
+              {['15 carrosséis por mês', 'Geração de imagens via IA', 'Publicação direta no Instagram', 'Suporte prioritário'].map(f => (
+                <div key={f} className="flex items-center gap-2 text-xs text-dark-muted">
+                  <Check className="h-3.5 w-3.5 text-accent-purple flex-shrink-0" />
+                  {f}
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={async () => {
+                setUpgradeModalOpen(false);
+                const res = await fetch('/api/stripe/checkout', { method: 'POST' });
+                if (res.ok) {
+                  const { url } = await res.json();
+                  if (url) window.location.href = url;
+                }
+              }}
+              className="btn-press w-full py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] transition-all"
+            >
+              Fazer Upgrade Agora
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
