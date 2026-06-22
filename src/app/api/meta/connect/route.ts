@@ -7,7 +7,9 @@ export async function GET() {
   const appId   = process.env.META_APP_ID ?? process.env.FACEBOOK_CLIENT_ID;
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
-  if (!session?.user?.email) {
+  // Use email consistently for social_connections (same as callback)
+  const userId = session?.user?.email;
+  if (!userId) {
     return NextResponse.redirect(`${baseUrl}/login`);
   }
 
@@ -25,7 +27,7 @@ export async function GET() {
   ].join(",");
 
   const nonce = crypto.randomUUID();
-  const state = Buffer.from(JSON.stringify({ userId: session.user.email, nonce })).toString("base64url");
+  const state = Buffer.from(JSON.stringify({ userId, nonce })).toString("base64url");
 
   // Facebook OAuth — funciona com Instagram Business vinculado a Página do Facebook
   const oauthUrl =

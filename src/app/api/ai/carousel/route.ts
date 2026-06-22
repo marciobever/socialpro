@@ -133,7 +133,7 @@ TOM DE VOZ: "${tone.toUpperCase()}" — ${TONE_HINTS[tone] || TONE_HINTS.autorid
 
 REGRAS DE CADA SLIDE:
 - "title": máximo 6 palavras em CAIXA ALTA, sem emojis, sem aspas
-- "subtitle": 1-2 frases, máximo 120 caracteres, linguagem magnética com fatos reais da pesquisa
+- "subtitle": 2-3 frases ricas, máximo 200 caracteres. Use dados concretos, números reais, exemplos específicos. Nunca frases genéricas como "salve e compartilhe" — isso vai no último slide apenas.
 - "imagePrompt": cena visual ÚNICA e ESPECÍFICA do item deste slide, em inglês detalhado.
   Estilo visual obrigatório para todos os slides: "${styleDesc}".
   OBRIGATÓRIO: cada slide deve ter imagePrompt completamente diferente dos outros.
@@ -148,7 +148,7 @@ ESTRUTURA OBRIGATÓRIA:
 Retorne APENAS JSON válido:
 {"slides":[{"title":"...","subtitle":"...","imagePrompt":"..."}, ...],"caption":"..."}
 Array de slides com EXATAMENTE ${slideCount} itens.
-"caption": legenda pronta para Instagram, 150-300 caracteres, gancho forte no início, CTA claro no final, 5-8 hashtags relevantes ao tema.`,
+"caption": legenda COMPLETA para Instagram. Mínimo 3 parágrafos: (1) gancho emocional de 1 linha que para o scroll, (2) desenvolvimento com insight real do tema, (3) CTA específico e urgente. Termine com 8-12 hashtags nicho relevantes. Entre 400-800 caracteres no total. NÃO use o título do slide como gancho — crie algo novo e mais profundo.`,
         },
         {
           role: 'user',

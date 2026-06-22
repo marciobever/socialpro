@@ -3,8 +3,9 @@ import { getServerSession, type Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getSupabase } from "@/lib/supabase";
 
+// Use email consistently — social_connections.user_id is always stored as email
 function getUserId(session: Session) {
-  return (session.user as { id?: string }).id ?? session.user?.email ?? "";
+  return session.user?.email ?? "";
 }
 
 export async function GET() {

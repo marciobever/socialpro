@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/context/AppContext';
 import { CarouselCard } from '@/components/cards/CarouselCard';
 import { TextPostCard } from '@/components/cards/TextPostCard';
@@ -226,9 +227,10 @@ function SlideCard({
   );
 }
 
-export default function DashboardPage() {
+function DashboardPage() {
   const t = useTranslations('dashboard');
   const tPublish = useTranslations('publish');
+  const searchParams = useSearchParams();
   const {
     platform, setPlatform,
     tone, setTone,
@@ -249,6 +251,31 @@ export default function DashboardPage() {
     upgradeModalOpen, setUpgradeModalOpen, upgradeReason,
     loadSubscription,
   } = useAppContext();
+
+  // Load carousel from history when ?load=<id> is in the URL
+  React.useEffect(() => {
+    const carouselId = searchParams?.get('load');
+    if (!carouselId) return;
+    fetch(`/api/carousels/${carouselId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data?.carousel) return;
+        const { carousel } = data;
+        const dbSlides: Slide[] = (carousel.slides ?? []).map((s: Slide) => ({
+          ...s,
+          isGeneratingImage: false,
+        }));
+        if (dbSlides.length) {
+          setSlides(dbSlides);
+          setActiveSlideIndex(0);
+          if (carousel.topic) setCarouselTopic(carousel.topic);
+          if (carousel.caption) setContent(carousel.caption);
+          setPlatform('instagram');
+        }
+      })
+      .catch(console.error);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [copied,           setCopied]           = React.useState(false);
   const [showPublish,      setShowPublish]       = React.useState(false);
@@ -777,3 +804,12 @@ export default function DashboardPage() {
     </>
   );
 }
+
+// Wrap in Suspense so useSearchParams works in Next.js App Router
+import { Suspense } from 'react';
+const DashboardPageWithSuspense = () => (
+  <Suspense fallback={null}>
+    <DashboardPage />
+  </Suspense>
+);
+export { DashboardPageWithSuspense as default };
