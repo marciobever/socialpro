@@ -1,11 +1,12 @@
 "use client";
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { Sparkles, BrainCircuit, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { Sparkles, BrainCircuit, ArrowRight, ShieldCheck, Zap, Check } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { Reveal } from '@/components/landing/Reveal';
 import { AnimatedCarouselPreview } from '@/components/landing/AnimatedCarouselPreview';
 import { AnimatedChart } from '@/components/landing/AnimatedChart';
+import { Footer } from '@/components/Footer';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -481,16 +482,108 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
-      {/* Footer */}
-      <footer className="w-full py-8 border-t border-white/5 bg-[#050609] text-center text-xs text-dark-muted relative z-10">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <BrainCircuit className="h-4 w-4 text-accent-purple" />
-            <span className="font-semibold text-white">SocialPro AI Inc.</span>
-          </div>
-          <p>{t('footer')}</p>
+      {/* ── Pricing Section ── */}
+      <section className="relative z-10 py-24 px-6">
+        <div className="max-w-6xl mx-auto space-y-12">
+          <Reveal>
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-accent-cyan mx-auto">
+                <Zap className="h-3.5 w-3.5" />
+                <span>Planos e Preços</span>
+              </div>
+              <h2 className="font-display text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
+                Simples. Transparente.{' '}
+                <span className="bg-gradient-to-r from-accent-purple to-accent-cyan bg-clip-text text-transparent">
+                  Sem surpresas.
+                </span>
+              </h2>
+              <p className="text-sm text-dark-muted max-w-lg mx-auto">
+                Cancele ou mude de plano a qualquer momento. Sem contratos longos.
+              </p>
+            </div>
+          </Reveal>
+
+          <Reveal>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch max-w-5xl mx-auto">
+              {[
+                {
+                  name: 'Starter Creator', price: 0, recommended: false,
+                  desc: 'Para explorar a plataforma',
+                  features: ['Geração de texto com IA', 'Até 3 slides por carrossel', '1 Brand Kit', 'Preview de redes sociais'],
+                  cta: 'Começar Grátis', planId: 'starter',
+                },
+                {
+                  name: 'Pro Creator', price: 29, recommended: true,
+                  desc: 'Para criadores sérios',
+                  features: ['15 carrosséis/mês com IA', 'Carrosséis de até 8 slides', 'Imagens geradas por IA', 'Tons de voz avançados', 'Banco de Ideias Virais', 'Calendário editorial + Analytics'],
+                  cta: 'Assinar Pro', planId: 'pro',
+                },
+                {
+                  name: 'Agency Scale', price: 79, recommended: false,
+                  desc: 'Para agências e equipes',
+                  features: ['60 carrosséis/mês com IA', 'Tudo do Pro', 'Brand Kits ilimitados', 'Exportação Figma/PDF', 'Análise de concorrentes', 'Gerente de conta dedicado'],
+                  cta: 'Assinar Agency', planId: 'agency',
+                },
+              ].map((plan) => (
+                <div key={plan.planId}
+                  className={`glass-panel rounded-3xl p-8 border flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:-translate-y-1.5 ${
+                    plan.recommended
+                      ? 'border-accent-purple bg-accent-purple/[0.03] shadow-[0_20px_50px_rgba(139,92,246,0.15)] scale-105 z-10'
+                      : 'border-white/5 bg-white/[0.01]'
+                  }`}
+                >
+                  {plan.recommended && (
+                    <div className="absolute top-0 right-10 left-10 h-[1px] bg-gradient-to-r from-transparent via-accent-purple to-transparent blur-sm" />
+                  )}
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-display text-lg font-bold text-white">{plan.name}</h3>
+                        <p className="text-[11px] text-dark-muted mt-1">{plan.desc}</p>
+                      </div>
+                      {plan.recommended && (
+                        <span className="text-[9px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-accent-purple/20 border border-accent-purple/40 text-accent-purple tracking-wider">
+                          Recomendado
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-baseline text-white">
+                      {plan.price > 0 && <span className="text-sm font-bold">USD$</span>}
+                      <span className="text-4xl font-extrabold tracking-tight font-display">
+                        {plan.price === 0 ? 'Grátis' : plan.price}
+                      </span>
+                      {plan.price > 0 && <span className="text-xs text-dark-muted ml-1">/mês</span>}
+                    </div>
+                    <hr className="border-white/5" />
+                    <ul className="space-y-3">
+                      {plan.features.map(f => (
+                        <li key={f} className="flex items-start gap-2.5 text-xs text-dark-muted">
+                          <Check className="h-4 w-4 text-accent-cyan flex-shrink-0 mt-0.5" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="pt-8">
+                    <button
+                      onClick={() => router.push(`/login?plan=${plan.planId}`)}
+                      className={`w-full py-3.5 rounded-xl text-xs font-bold transition-all ${
+                        plan.recommended
+                          ? 'bg-gradient-to-r from-accent-purple to-accent-cyan text-white shadow-lg hover:shadow-[0_0_20px_rgba(139,92,246,0.4)]'
+                          : 'bg-white/5 hover:bg-white/10 border border-white/10 text-white'
+                      }`}
+                    >
+                      {plan.cta}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Reveal>
         </div>
-      </footer>
+      </section>
+
+      <Footer />
     </div>
   );
 }

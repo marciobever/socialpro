@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Check, BrainCircuit, Sparkles, HelpCircle, ArrowLeft } from 'lucide-react';
+import { Footer } from '@/components/Footer';
 
 const PLAN_NAMES: Record<string, string> = {
   starter: 'Starter Creator',
@@ -184,9 +185,7 @@ export default function PricingPage() {
         </div>
       </main>
 
-      <footer className="w-full py-8 border-t border-white/5 bg-[#050609] text-center text-xs text-dark-muted relative z-10">
-        <p>{t('footer')}</p>
-      </footer>
+      <Footer />
     </div>
   );
 }
