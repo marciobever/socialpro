@@ -61,12 +61,16 @@ export async function GET(req: NextRequest) {
     const expiresInSeconds = longData.expires_in   ?? 5183944;
     const expiresAt        = new Date(Date.now() + expiresInSeconds * 1000).toISOString();
 
-    // 3. Busca Páginas do Facebook do usuário
-    const pagesRes  = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
+    // 3. Busca Páginas + Page Access Token (nunca expira)
+    const pagesRes  = await fetch(
+      `https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token&access_token=${accessToken}`
+    );
     const pagesData = await pagesRes.json();
     const page      = pagesData.data?.[0];
-    const pageId    = page?.id   ?? "";
-    const pageName  = page?.name ?? "";
+    const pageId    = page?.id           ?? "";
+    const pageName  = page?.name         ?? "";
+    // Page Access Token é permanente (não expira enquanto o usuário não revogar)
+    const pageToken = page?.access_token ?? accessToken;
 
     // 4. Busca Instagram Business Account vinculado à Página
     let instagramId       = "";
@@ -74,7 +78,7 @@ export async function GET(req: NextRequest) {
     if (pageId) {
       const igRes  = await fetch(
         `https://graph.facebook.com/v21.0/${pageId}` +
-        `?fields=instagram_business_account&access_token=${accessToken}`
+        `?fields=instagram_business_account&access_token=${pageToken}`
       );
       const igData = await igRes.json();
       instagramId  = igData.instagram_business_account?.id ?? "";
@@ -82,12 +86,18 @@ export async function GET(req: NextRequest) {
       if (instagramId) {
         const igInfoRes = await fetch(
           `https://graph.facebook.com/v21.0/${instagramId}` +
-          `?fields=username,name&access_token=${accessToken}`
+          `?fields=username,name&access_token=${pageToken}`
         );
         const igInfo      = await igInfoRes.json();
         instagramUsername = igInfo.username ?? igInfo.name ?? "";
       }
     }
+
+    // Token final: Page Token (permanente) se disponível, senão long-lived user token (60d)
+    const finalToken   = pageToken !== accessToken ? pageToken : accessToken;
+    const finalExpires = pageToken !== accessToken
+      ? new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString() // 10 anos (permanente)
+      : expiresAt;
 
     // 5. Salva no Supabase
     const { error: dbError } = await getSupabase()
@@ -96,8 +106,8 @@ export async function GET(req: NextRequest) {
         {
           user_id:              userId,
           provider:             "instagram",
-          access_token:         accessToken,
-          token_expires_at:     expiresAt,
+          access_token:         finalToken,
+          token_expires_at:     finalExpires,
           facebook_page_id:     pageId,
           facebook_page_name:   pageName,
           instagram_account_id: instagramId,
