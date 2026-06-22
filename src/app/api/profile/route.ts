@@ -13,11 +13,16 @@ export async function GET() {
 
   const userId = getUserId(session);
 
-  const { data } = await getSupabase()
+  const { data, error } = await getSupabase()
     .from('profiles')
     .select('brand_name, brand_handle, avatar_url, ai_bio')
     .eq('user_id', userId)
     .single();
+
+  if (error && error.code !== 'PGRST116') {
+    // PGRST116 = row not found (normal for new users); anything else log it
+    console.error('[profile] GET error:', error.message);
+  }
 
   return NextResponse.json({
     brandName:   data?.brand_name   ?? '',
@@ -84,8 +89,9 @@ export async function PUT(request: Request) {
     if (error) throw error;
 
     return NextResponse.json({ ok: true, avatarUrl: finalAvatarUrl });
-  } catch (err) {
-    console.error('[profile] save error:', err);
-    return NextResponse.json({ error: 'Erro ao salvar perfil.' }, { status: 500 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[profile] save error:', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
