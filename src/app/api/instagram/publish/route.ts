@@ -79,13 +79,26 @@ export async function POST(req: NextRequest) {
   const { access_token: token, instagram_account_id: igId } = conn;
   const BASE = "https://graph.facebook.com/v21.0";
 
+  // Poll container status until FINISHED (Instagram requires processing time)
+  async function waitForContainer(containerId: string, maxAttempts = 15): Promise<void> {
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(r => setTimeout(r, 3000)); // wait 3s between polls
+      const res  = await fetch(`${BASE}/${containerId}?fields=status_code&access_token=${token}`);
+      const data = await res.json();
+      if (data.status_code === 'FINISHED') return;
+      if (data.status_code === 'ERROR') throw new Error(`Falha ao processar imagem no Instagram (container ${containerId})`);
+      // IN_PROGRESS or EXPIRED — keep waiting
+    }
+    throw new Error('Timeout: Instagram demorou demais para processar as imagens. Tente novamente.');
+  }
+
   try {
     // 1. Upload all images to Supabase Storage and get public URLs
     const publicUrls = await Promise.all(
       slidesWithImages.map((s, i) => uploadImageToStorage(userId, i, s.imageUrl))
     );
 
-    // 2. Create individual media containers on Instagram
+    // 2. Create individual media containers and wait for each to be FINISHED
     const containerIds: string[] = [];
     for (const url of publicUrls) {
       const res = await fetch(`${BASE}/${igId}/media`, {
@@ -98,11 +111,12 @@ export async function POST(req: NextRequest) {
         }),
       });
       const data = await res.json();
-      if (!data.id) {
-        throw new Error(`Falha ao criar container: ${JSON.stringify(data)}`);
-      }
+      if (!data.id) throw new Error(`Falha ao criar container: ${JSON.stringify(data)}`);
       containerIds.push(data.id);
     }
+
+    // Wait for ALL containers to finish processing before creating carousel
+    await Promise.all(containerIds.map(id => waitForContainer(id)));
 
     // 3. Create carousel container
     const carouselRes = await fetch(`${BASE}/${igId}/media`, {
