@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
 
-  const userId = session.user.email;
+  const userId = (session.user as { id?: string }).id ?? session.user.email ?? "";
 
   // Get Meta credentials from Supabase
   const { data: conn } = await getSupabase()
