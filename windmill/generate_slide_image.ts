@@ -31,11 +31,19 @@ export async function main(
     size: '1024x1536',
     quality: 'low',
     n: 1,
-    response_format: 'b64_json',
   });
 
-  const b64        = (response.data[0] as any).b64_json as string;
-  const imageBytes = Buffer.from(b64, 'base64');
+  const imageData = response.data[0] as any;
+  let imageBytes: Buffer;
+
+  if (imageData.b64_json) {
+    imageBytes = Buffer.from(imageData.b64_json, 'base64');
+  } else if (imageData.url) {
+    const imgRes = await fetch(imageData.url);
+    imageBytes = Buffer.from(await imgRes.arrayBuffer());
+  } else {
+    throw new Error('Sem dados de imagem na resposta da OpenAI');
+  }
 
   // Upload to Supabase Storage
   const fileName = `${carousel_id}/slide_${slide_index}.png`;
