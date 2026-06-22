@@ -1,18 +1,24 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession, type Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getSupabase } from "@/lib/supabase";
 
+function getUserId(session: Session) {
+  return (session.user as { id?: string }).id ?? session.user?.email ?? "";
+}
+
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
+  if (!session?.user) {
     return NextResponse.json({ connected: false, instagramId: null, instagramName: null, pageName: null });
   }
 
+  const uid = getUserId(session);
+
   const { data, error } = await getSupabase()
     .from("social_connections")
-    .select("instagram_account_id, instagram_username, facebook_page_name, token_expires_at")
-    .eq("user_id", session.user.email)
+    .select("instagram_account_id, instagram_username, facebook_page_name, token_expires_at, available_accounts")
+    .eq("user_id", uid)
     .eq("provider", "instagram")
     .maybeSingle();
 
@@ -25,25 +31,69 @@ export async function GET() {
     : false;
 
   return NextResponse.json({
-    connected:      !expired,
-    instagramId:    data.instagram_account_id ?? null,
-    instagramName:  data.instagram_username   ?? null,
-    pageName:       data.facebook_page_name   ?? null,
-    tokenExpiresAt: data.token_expires_at     ?? null,
+    connected:          !expired,
+    instagramId:        data.instagram_account_id ?? null,
+    instagramName:      data.instagram_username   ?? null,
+    pageName:           data.facebook_page_name   ?? null,
+    tokenExpiresAt:     data.token_expires_at     ?? null,
     expired,
+    availableAccounts:  data.available_accounts   ?? [],
   });
+}
+
+// Troca a conta Instagram ativa
+export async function PATCH(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+
+  const uid = getUserId(session);
+  const { instagramAccountId } = await request.json();
+
+  const { data } = await getSupabase()
+    .from("social_connections")
+    .select("available_accounts")
+    .eq("user_id", uid)
+    .eq("provider", "instagram")
+    .single();
+
+  const accounts: {
+    instagram_account_id: string;
+    instagram_username:   string;
+    facebook_page_id:     string;
+    facebook_page_name:   string;
+    page_token:           string;
+  }[] = data?.available_accounts ?? [];
+
+  const selected = accounts.find(a => a.instagram_account_id === instagramAccountId);
+  if (!selected) return NextResponse.json({ error: "Conta não encontrada." }, { status: 404 });
+
+  const { error } = await getSupabase()
+    .from("social_connections")
+    .update({
+      instagram_account_id: selected.instagram_account_id,
+      instagram_username:   selected.instagram_username,
+      facebook_page_id:     selected.facebook_page_id,
+      facebook_page_name:   selected.facebook_page_name,
+      access_token:         selected.page_token,
+    })
+    .eq("user_id", uid)
+    .eq("provider", "instagram");
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ ok: true, username: selected.instagram_username });
 }
 
 export async function DELETE() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
-  }
+  if (!session?.user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+
+  const uid = getUserId(session);
 
   await getSupabase()
     .from("social_connections")
     .delete()
-    .eq("user_id", session.user.email)
+    .eq("user_id", uid)
     .eq("provider", "instagram");
 
   return NextResponse.json({ disconnected: true });

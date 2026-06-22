@@ -61,42 +61,58 @@ export async function GET(req: NextRequest) {
     const expiresInSeconds = longData.expires_in   ?? 5183944;
     const expiresAt        = new Date(Date.now() + expiresInSeconds * 1000).toISOString();
 
-    // 3. Busca Páginas + Page Access Token (nunca expira)
+    // 3. Busca TODAS as Páginas + Page Access Tokens (permanentes)
     const pagesRes  = await fetch(
       `https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token&access_token=${accessToken}`
     );
     const pagesData = await pagesRes.json();
-    const page      = pagesData.data?.[0];
-    const pageId    = page?.id           ?? "";
-    const pageName  = page?.name         ?? "";
-    // Page Access Token é permanente (não expira enquanto o usuário não revogar)
-    const pageToken = page?.access_token ?? accessToken;
+    const pages: { id: string; name: string; access_token: string }[] = pagesData.data ?? [];
 
-    // 4. Busca Instagram Business Account vinculado à Página
-    let instagramId       = "";
-    let instagramUsername = "";
-    if (pageId) {
+    // 4. Para cada página, busca o Instagram Business Account vinculado
+    interface IgAccount {
+      instagram_account_id: string;
+      instagram_username:   string;
+      facebook_page_id:     string;
+      facebook_page_name:   string;
+      page_token:           string;
+    }
+    const availableAccounts: IgAccount[] = [];
+
+    for (const page of pages) {
       const igRes  = await fetch(
-        `https://graph.facebook.com/v21.0/${pageId}` +
-        `?fields=instagram_business_account&access_token=${pageToken}`
+        `https://graph.facebook.com/v21.0/${page.id}` +
+        `?fields=instagram_business_account&access_token=${page.access_token}`
       );
       const igData = await igRes.json();
-      instagramId  = igData.instagram_business_account?.id ?? "";
+      const igId   = igData.instagram_business_account?.id ?? "";
+      if (!igId) continue;
 
-      if (instagramId) {
-        const igInfoRes = await fetch(
-          `https://graph.facebook.com/v21.0/${instagramId}` +
-          `?fields=username,name&access_token=${pageToken}`
-        );
-        const igInfo      = await igInfoRes.json();
-        instagramUsername = igInfo.username ?? igInfo.name ?? "";
-      }
+      const igInfoRes = await fetch(
+        `https://graph.facebook.com/v21.0/${igId}` +
+        `?fields=username,name&access_token=${page.access_token}`
+      );
+      const igInfo = await igInfoRes.json();
+
+      availableAccounts.push({
+        instagram_account_id: igId,
+        instagram_username:   igInfo.username ?? igInfo.name ?? "",
+        facebook_page_id:     page.id,
+        facebook_page_name:   page.name,
+        page_token:           page.access_token,
+      });
     }
 
-    // Token final: Page Token (permanente) se disponível, senão long-lived user token (60d)
-    const finalToken   = pageToken !== accessToken ? pageToken : accessToken;
-    const finalExpires = pageToken !== accessToken
-      ? new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString() // 10 anos (permanente)
+    // Conta ativa = primeira disponível (usuário pode trocar depois no Brand Kit)
+    const active    = availableAccounts[0];
+    const pageId    = active?.facebook_page_id    ?? "";
+    const pageName  = active?.facebook_page_name  ?? "";
+    const finalToken = active?.page_token ?? accessToken;
+    const instagramId       = active?.instagram_account_id ?? "";
+    const instagramUsername = active?.instagram_username   ?? "";
+
+    // Page Token é permanente; user token expira em 60 dias
+    const finalExpires = active?.page_token
+      ? new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString()
       : expiresAt;
 
     // 5. Salva no Supabase
@@ -107,6 +123,7 @@ export async function GET(req: NextRequest) {
           user_id:              userId,
           provider:             "instagram",
           access_token:         finalToken,
+          available_accounts:   availableAccounts,
           token_expires_at:     finalExpires,
           facebook_page_id:     pageId,
           facebook_page_name:   pageName,

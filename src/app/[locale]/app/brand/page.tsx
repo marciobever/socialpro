@@ -2,13 +2,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { useSession } from 'next-auth/react';
-import { Palette, User, Check, Globe, Link2, Link2Off, Loader2, AlertCircle, Upload, X } from 'lucide-react';
+import { Palette, User, Check, Globe, Link2, Link2Off, Loader2, AlertCircle, Upload, X, ChevronDown } from 'lucide-react';
+
+interface IgAccount {
+  instagram_account_id: string;
+  instagram_username:   string;
+  facebook_page_name:   string;
+}
 
 interface MetaStatus {
-  connected: boolean;
-  instagramId:   string | null;
-  instagramName: string | null;
-  pageName:      string | null;
+  connected:          boolean;
+  instagramId:        string | null;
+  instagramName:      string | null;
+  pageName:           string | null;
+  availableAccounts?: IgAccount[];
 }
 
 function InstagramIcon({ className }: { className?: string }) {
@@ -69,10 +76,12 @@ export default function BrandKitPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [metaStatus,    setMetaStatus]    = useState<MetaStatus | null>(null);
-  const [metaLoading,   setMetaLoading]   = useState(true);
-  const [disconnecting, setDisconnecting] = useState(false);
-  const [metaError,     setMetaError]     = useState('');
+  const [metaStatus,      setMetaStatus]      = useState<MetaStatus | null>(null);
+  const [metaLoading,     setMetaLoading]     = useState(true);
+  const [disconnecting,   setDisconnecting]   = useState(false);
+  const [metaError,       setMetaError]       = useState('');
+  const [switchingAccount, setSwitchingAccount] = useState(false);
+  const [showAccountList,  setShowAccountList]  = useState(false);
 
   // Sync form when context loads from DB (runs once after initial fetch)
   const synced = useRef(false);
@@ -126,6 +135,27 @@ export default function BrandKitPage() {
     await fetch('/api/meta/status', { method: 'DELETE' });
     setMetaStatus({ connected: false, instagramId: null, instagramName: null, pageName: null });
     setDisconnecting(false);
+  };
+
+  const handleSwitchAccount = async (account: IgAccount) => {
+    setSwitchingAccount(true);
+    setShowAccountList(false);
+    const res = await fetch('/api/meta/status', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ instagramAccountId: account.instagram_account_id }),
+    });
+    if (res.ok) {
+      setMetaStatus(prev => prev ? {
+        ...prev,
+        instagramId:   account.instagram_account_id,
+        instagramName: account.instagram_username,
+        pageName:      account.facebook_page_name,
+      } : prev);
+      // Auto-fill handle
+      setHandle(`@${account.instagram_username}`);
+    }
+    setSwitchingAccount(false);
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -363,6 +393,50 @@ export default function BrandKitPage() {
                   <span className="text-[10px] text-dark-muted">—</span>
                 )}
               </div>
+
+              {/* Seletor de contas — aparece quando há múltiplas contas */}
+              {metaStatus?.connected && (metaStatus.availableAccounts?.length ?? 0) > 1 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowAccountList(!showAccountList)}
+                    disabled={switchingAccount}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-dark-border/20 border border-dark-border text-[11px] font-semibold text-dark-muted hover:text-dark-text hover:border-accent-purple/30 transition-all disabled:opacity-50"
+                  >
+                    <span>
+                      {switchingAccount ? 'Trocando conta...' : `Conta ativa: @${metaStatus.instagramName}`}
+                    </span>
+                    {switchingAccount
+                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      : <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAccountList ? 'rotate-180' : ''}`} />
+                    }
+                  </button>
+
+                  {showAccountList && (
+                    <div className="absolute top-full left-0 right-0 mt-1 z-20 glass-panel rounded-xl border border-dark-border shadow-xl overflow-hidden">
+                      {metaStatus.availableAccounts!.map(account => (
+                        <button
+                          key={account.instagram_account_id}
+                          onClick={() => handleSwitchAccount(account)}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-white/5 transition-colors ${
+                            account.instagram_account_id === metaStatus.instagramId ? 'bg-accent-purple/10' : ''
+                          }`}
+                        >
+                          <InstagramIcon className="h-4 w-4 text-pink-400 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-bold text-dark-text truncate">
+                              @{account.instagram_username}
+                            </p>
+                            <p className="text-[9px] text-dark-muted truncate">{account.facebook_page_name}</p>
+                          </div>
+                          {account.instagram_account_id === metaStatus.instagramId && (
+                            <Check className="h-3.5 w-3.5 text-emerald-400 ml-auto flex-shrink-0" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {metaError && (
                 <div className="flex items-start gap-2 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-[10px] text-red-400">
