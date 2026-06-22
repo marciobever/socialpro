@@ -3,7 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Layers, Calendar, BarChart2, Palette, Clock, LogOut, Menu, X, BrainCircuit, Sun, Moon } from 'lucide-react';
+import { Layers, Calendar, BarChart2, Palette, Clock, LogOut, Menu, X, BrainCircuit, UserCircle, User } from 'lucide-react';
 
 interface TopNavProps {
   brandName: string;
@@ -17,28 +17,22 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
   const pathname = usePathname();
   const t = useTranslations('nav');
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [theme, setTheme] = React.useState<'dark' | 'light'>('dark');
 
+  // Force dark mode — light mode not yet fully implemented
   React.useEffect(() => {
-    const saved = (localStorage.getItem('sp-theme') as 'dark' | 'light') || 'dark';
-    setTheme(saved);
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.removeItem('sp-theme');
   }, []);
-
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('sp-theme', next);
-  };
 
   // pathname from next/navigation includes the locale prefix (/en/app/dashboard)
   // so we check with endsWith for locale-agnostic active state
   const navItems = [
-    { href: '/app/dashboard', label: t('studio'), icon: Layers },
-    { href: '/app/history',   label: t('history'), icon: Clock },
+    { href: '/app/dashboard', label: t('studio'),   icon: Layers },
+    { href: '/app/history',   label: t('history'),  icon: Clock },
     { href: '/app/calendar',  label: t('calendar'), icon: Calendar },
-    { href: '/app/analytics', label: t('analytics'), icon: BarChart2 },
+    { href: '/app/analytics', label: t('analytics'),icon: BarChart2 },
     { href: '/app/brand',     label: t('brandKit'), icon: Palette },
+    { href: '/app/account',   label: 'Conta',       icon: User },
   ];
 
   return (
@@ -79,27 +73,32 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
 
         {/* Right */}
         <div className="flex items-center gap-2">
-          {/* Theme toggle */}
-          <button onClick={toggleTheme} title={theme === 'dark' ? t('lightMode') : t('darkMode')}
-            className="p-1.5 rounded-lg text-dark-muted hover:text-dark-text hover:bg-dark-border transition-all border border-transparent hover:border-dark-border"
-          >
-            {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-          </button>
-
           {/* Plan badge */}
           <span className="hidden lg:inline-flex text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-accent-purple/10 border border-accent-purple/20 text-accent-purple tracking-wider">
             {planName}
           </span>
 
-          {/* Avatar */}
-          <div className="hidden sm:flex items-center gap-2">
+          {/* Avatar — click to go to account page */}
+          <button
+            onClick={() => router.push('/app/account')}
+            className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-dark-border/60 transition-all group"
+            title="Minha conta"
+          >
             <div className="text-right leading-none">
-              <p className="text-[10px] font-bold text-dark-text">{brandName}</p>
-              <p className="text-[9px] text-accent-purple">{brandHandle}</p>
+              <p className="text-[10px] font-bold text-dark-text group-hover:text-accent-cyan transition-colors">
+                {brandName || 'Meu perfil'}
+              </p>
+              <p className="text-[9px] text-dark-muted">{brandHandle}</p>
             </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={avatarUrl} alt="Avatar" className="h-7 w-7 rounded-full border border-accent-purple/30 object-cover" />
-          </div>
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="Avatar" className="h-7 w-7 rounded-full border border-accent-purple/30 object-cover" />
+            ) : (
+              <div className="h-7 w-7 rounded-full border border-accent-purple/30 bg-accent-purple/10 flex items-center justify-center">
+                <UserCircle className="h-4 w-4 text-accent-purple" />
+              </div>
+            )}
+          </button>
 
           {/* Logout */}
           <button onClick={() => router.push('/')} title={t('signOut')}

@@ -40,23 +40,32 @@ export async function PUT(request: Request) {
 
     // If it's a base64 data URL, upload to Supabase Storage
     if (finalAvatarUrl.startsWith('data:')) {
-      const base64 = finalAvatarUrl.replace(/^data:image\/\w+;base64,/, '');
-      const buffer = Buffer.from(base64, 'base64');
-      const path   = `avatars/${userId}.jpg`;
+      const match  = finalAvatarUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+      const mime   = match?.[1] ?? 'image/jpeg';
+      const b64    = match?.[2] ?? finalAvatarUrl.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(b64, 'base64');
+      const ext    = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+      const path   = `avatars/${userId}.${ext}`;
 
       const { error: uploadError } = await getSupabase()
         .storage
         .from('carousel-images')
-        .upload(path, buffer, { contentType: 'image/jpeg', upsert: true });
+        .upload(path, buffer, { contentType: mime, upsert: true });
 
-      if (uploadError) throw new Error('Upload do avatar falhou: ' + uploadError.message);
+      if (uploadError) {
+        console.error('[profile] avatar upload error:', uploadError);
+        return NextResponse.json(
+          { error: `Upload falhou: ${uploadError.message}` },
+          { status: 500 }
+        );
+      }
 
       const { data: { publicUrl } } = getSupabase()
         .storage
         .from('carousel-images')
         .getPublicUrl(path);
 
-      finalAvatarUrl = publicUrl;
+      finalAvatarUrl = `${publicUrl}?t=${Date.now()}`;
     }
 
     const { error } = await getSupabase()

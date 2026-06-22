@@ -64,6 +64,7 @@ export default function BrandKitPage() {
   const [bio,    setBio]    = useState(brandKit.aiBio);
   const [saving,    setSaving]    = useState(false);
   const [saved,     setSaved]     = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [uploading, setUploading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -146,22 +147,22 @@ export default function BrandKitPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setSaveError('');
     try {
       const res = await fetch('/api/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ brandName: name, brandHandle: handle, aiBio: bio, avatarUrl: avatar }),
       });
-      if (!res.ok) throw new Error('Falha ao salvar');
-      const { avatarUrl: savedUrl } = await res.json();
-      const finalAvatar = savedUrl || avatar;
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || 'Falha ao salvar');
+      const finalAvatar = json?.avatarUrl || avatar;
       setAvatar(finalAvatar);
-      // Update context state (no extra DB call — already saved above)
       setBrandKit({ brandName: name, brandHandle: handle, avatarUrl: finalAvatar, aiBio: bio });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
-    } catch {
-      // keep form state as-is
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Erro ao salvar. Tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -274,6 +275,10 @@ export default function BrandKitPage() {
             {saved ? (
               <span className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl">
                 <Check className="h-3.5 w-3.5" /> Salvo!
+              </span>
+            ) : saveError ? (
+              <span className="text-[11px] text-red-400 font-semibold max-w-[200px] truncate" title={saveError}>
+                ⚠ {saveError}
               </span>
             ) : <div />}
             <button type="submit" disabled={saving}
