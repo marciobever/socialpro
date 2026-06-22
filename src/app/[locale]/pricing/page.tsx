@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Check, BrainCircuit, Sparkles, HelpCircle, ArrowLeft } from 'lucide-react';
+import { Check, Sparkles, HelpCircle } from 'lucide-react';
 import { Footer } from '@/components/Footer';
+import { PublicHeader } from '@/components/PublicHeader';
 
 const PLAN_NAMES: Record<string, string> = {
   starter: 'Starter Creator',
@@ -32,30 +33,7 @@ export default function PricingPage() {
       <div className="absolute bottom-[10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-accent-purple/10 blur-[150px] pointer-events-none" />
       <div className="absolute inset-0 bg-grid-pattern grid-mask pointer-events-none -z-10" />
 
-      {/* Header */}
-      <header className="w-full px-6 py-4 relative z-50">
-        <div className="mx-auto max-w-7xl">
-          <div className="glass-panel rounded-2xl px-6 py-4 flex items-center justify-between shadow-2xl">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan p-[1px]">
-                <div className="flex h-full w-full items-center justify-center rounded-[11px] bg-dark-bg">
-                  <BrainCircuit className="h-5 w-5 text-accent-cyan" />
-                </div>
-              </div>
-              <span className="font-display text-xl font-bold tracking-tight text-white">
-                Social<span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">Pro</span>
-              </span>
-            </div>
-            <button
-              onClick={() => router.push('/')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 text-white transition-all"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              {t('back')}
-            </button>
-          </div>
-        </div>
-      </header>
+      <PublicHeader showBack backLabel={t('back')} backHref="/" />
 
       {/* Main */}
       <main className="max-w-6xl w-full mx-auto px-6 py-12 space-y-12 relative z-10 flex-1 flex flex-col justify-center">
