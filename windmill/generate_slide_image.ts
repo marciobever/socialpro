@@ -17,9 +17,9 @@ export async function main(
   slide_index: number,
   locale: 'pt' | 'en' | 'es' = 'pt',
 ) {
-  const openaiKey   = await wmill.getVariable('u/bevervansomarcio/OPENAI_API_KEY');
-  const supabaseUrl = await wmill.getVariable('u/bevervansomarcio/SUPABASE_URL');
-  const supabaseKey = await wmill.getVariable('u/bevervansomarcio/SUPABASE_SERVICE_ROLE_KEY');
+  const openaiKey   = await wmill.getVariable('u/bevervansomarcio/socialpro/OPENAI_API_KEY');
+  const supabaseUrl = await wmill.getVariable('u/bevervansomarcio/socialpro/SUPABASE_URL');
+  const supabaseKey = await wmill.getVariable('u/bevervansomarcio/socialpro/SUPABASE_SERVICE_ROLE_KEY');
 
   const openai   = new OpenAI({ apiKey: openaiKey });
   const supabase = createClient(supabaseUrl, supabaseKey);
