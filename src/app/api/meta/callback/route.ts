@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const appSecret   = process.env.META_APP_SECRET ?? process.env.FACEBOOK_CLIENT_SECRET;
 
   if (error) {
-    return NextResponse.redirect(`${baseUrl}/app/brand?meta_error=denied`);
+    return NextResponse.redirect(`${baseUrl}/app/account?meta_error=denied`);
   }
 
   // Valida nonce CSRF
@@ -22,15 +22,15 @@ export async function GET(req: NextRequest) {
     const parsed     = JSON.parse(Buffer.from(state ?? "", "base64url").toString());
     const savedNonce = req.cookies.get("meta_oauth_nonce")?.value;
     if (!savedNonce || parsed.nonce !== savedNonce) {
-      return NextResponse.redirect(`${baseUrl}/app/brand?meta_error=invalid_state`);
+      return NextResponse.redirect(`${baseUrl}/app/account?meta_error=invalid_state`);
     }
     userId = parsed.userId;
   } catch {
-    return NextResponse.redirect(`${baseUrl}/app/brand?meta_error=invalid_state`);
+    return NextResponse.redirect(`${baseUrl}/app/account?meta_error=invalid_state`);
   }
 
   if (!code || !appId || !appSecret || !userId) {
-    return NextResponse.redirect(`${baseUrl}/app/brand?meta_error=missing_config`);
+    return NextResponse.redirect(`${baseUrl}/app/account?meta_error=missing_config`);
   }
 
   try {
@@ -138,12 +138,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${baseUrl}/app/brand?meta_error=server_error`);
     }
 
-    const response = NextResponse.redirect(`${baseUrl}/app/brand?meta_connected=1`);
+    const response = NextResponse.redirect(`${baseUrl}/app/account?meta_connected=1`);
     response.cookies.delete("meta_oauth_nonce");
     return response;
 
   } catch (err) {
     console.error("[meta/callback] Unexpected error:", err);
-    return NextResponse.redirect(`${baseUrl}/app/brand?meta_error=server_error`);
+    return NextResponse.redirect(`${baseUrl}/app/account?meta_error=server_error`);
   }
 }
