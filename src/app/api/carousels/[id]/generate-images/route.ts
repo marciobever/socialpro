@@ -2,18 +2,18 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-const WINDMILL_URL      = process.env.WINDMILL_URL!;
-const WINDMILL_TOKEN    = process.env.WINDMILL_TOKEN!;
-const WINDMILL_WS       = process.env.WINDMILL_WORKSPACE!;
-const WINDMILL_SCRIPT   = process.env.WINDMILL_SCRIPT_PATH!;
+const WINDMILL_URL      = process.env.WINDMILL_URL;
+const WINDMILL_TOKEN    = process.env.WINDMILL_TOKEN;
+const WINDMILL_WS       = process.env.WINDMILL_WORKSPACE;
+const WINDMILL_SCRIPT   = process.env.WINDMILL_SCRIPT_PATH;
 
-async function enqueueJob(payload: object): Promise<string> {
+async function enqueueJob(payload: object, url: string, token: string, ws: string, script: string): Promise<string> {
   const res = await fetch(
-    `${WINDMILL_URL}/api/w/${WINDMILL_WS}/jobs/run/p/${WINDMILL_SCRIPT}`,
+    `${url}/api/w/${ws}/jobs/run/p/${script}`,
     {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${WINDMILL_TOKEN}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
@@ -34,6 +34,19 @@ export async function POST(
 
   const { id: carouselId } = await params;
 
+  if (!WINDMILL_URL || !WINDMILL_TOKEN || !WINDMILL_WS || !WINDMILL_SCRIPT) {
+    console.error('[generate-images] Windmill env vars ausentes:', {
+      WINDMILL_URL: !!WINDMILL_URL,
+      WINDMILL_TOKEN: !!WINDMILL_TOKEN,
+      WINDMILL_WORKSPACE: !!WINDMILL_WS,
+      WINDMILL_SCRIPT_PATH: !!WINDMILL_SCRIPT,
+    });
+    return NextResponse.json(
+      { error: 'Windmill não configurado. Defina WINDMILL_URL, WINDMILL_TOKEN, WINDMILL_WORKSPACE e WINDMILL_SCRIPT_PATH.' },
+      { status: 503 }
+    );
+  }
+
   try {
     const body = await request.json();
     // slides: Array<{ slideIndex: number; prompt: string }>
@@ -49,7 +62,7 @@ export async function POST(
     // Enqueue all slides immediately — Windmill workers handle concurrency
     const jobIds = await Promise.all(
       slides.map(({ slideIndex, prompt }) =>
-        enqueueJob({ prompt, carousel_id: carouselId, slide_index: slideIndex, locale })
+        enqueueJob({ prompt, carousel_id: carouselId, slide_index: slideIndex, locale }, WINDMILL_URL!, WINDMILL_TOKEN!, WINDMILL_WS!, WINDMILL_SCRIPT!)
       )
     );
 

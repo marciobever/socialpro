@@ -12,13 +12,18 @@ export async function POST(request: Request) {
 
   const userId = (session.user as { id?: string }).id ?? session.user.email ?? 'unknown';
 
-  // Gate: check subscription usage before saving
-  const usage = await canGenerate(userId);
-  if (!usage.allowed) {
-    return NextResponse.json(
-      { error: usage.reason, used: usage.used, limit: usage.limit },
-      { status: 402 }
-    );
+  try {
+    // Gate: check subscription usage before saving
+    const usage = await canGenerate(userId);
+    if (!usage.allowed) {
+      return NextResponse.json(
+        { error: usage.reason, used: usage.used, limit: usage.limit },
+        { status: 402 }
+      );
+    }
+  } catch (gateErr) {
+    console.error('[carousels] canGenerate error:', gateErr);
+    return NextResponse.json({ error: 'Erro ao verificar assinatura.' }, { status: 503 });
   }
 
   try {

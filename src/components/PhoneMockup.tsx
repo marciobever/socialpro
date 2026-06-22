@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { PlatformType, Slide, CarouselStyleModel, WatermarkType } from '../types';
-import { Heart, MessageCircle, Share2, Bookmark, Send, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Send, Globe, ChevronLeft, ChevronRight, Cpu } from 'lucide-react';
 import { Twitter } from './icons';
 
 interface PhoneMockupProps {
@@ -29,6 +29,23 @@ export const PhoneMockup: React.FC<PhoneMockupProps> = ({
   avatarUrl,
 }) => {
   const currentSlide = slides[activeSlideIndex] || slides[0];
+  const isCurrentGenerating = !!(currentSlide?.isGeneratingImage && !currentSlide?.imageUrl);
+
+  // Elapsed-seconds timer — resets per slide and per generation cycle
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (isCurrentGenerating) {
+      setElapsed(0);
+      timerRef.current = setInterval(() => setElapsed(s => s + 1), 1000);
+    } else {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [currentSlide?.id, isCurrentGenerating]);
+
+  const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   const handlePrevSlide = () => {
     if (activeSlideIndex > 0) {
@@ -254,12 +271,59 @@ export const PhoneMockup: React.FC<PhoneMockupProps> = ({
                   />
                 )}
 
-                {/* Loading shimmer for slide being generated */}
-                {currentSlide?.isGeneratingImage && !currentSlide?.imageUrl && (
-                  <div className="absolute inset-0 bg-gradient-to-br from-accent-purple/20 to-accent-cyan/10 animate-pulse flex items-center justify-center z-10">
-                    <div className="text-center space-y-2">
-                      <div className="h-6 w-6 border-2 border-accent-purple border-t-transparent rounded-full animate-spin mx-auto" />
-                      <span className="text-[8px] text-white/60 font-semibold">Gerando imagem...</span>
+                {/* Loading overlay with timer — shown while Windmill generates */}
+                {isCurrentGenerating && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center overflow-hidden">
+                    {/* Animated background layers */}
+                    <div className="absolute inset-0 bg-[#070810]" />
+                    <div className="absolute inset-0 animate-pulse"
+                      style={{ background: 'radial-gradient(ellipse at 30% 40%, rgba(139,92,246,0.25) 0%, transparent 60%)' }} />
+                    <div className="absolute inset-0 animate-pulse" style={{ animationDelay: '0.7s',
+                      background: 'radial-gradient(ellipse at 70% 60%, rgba(6,182,212,0.2) 0%, transparent 60%)' }} />
+                    {/* Moving scanline */}
+                    <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent-purple/60 to-transparent animate-bounce"
+                      style={{ top: `${40 + (elapsed % 3) * 10}%`, transition: 'top 1s ease-in-out' }} />
+
+                    {/* Center content */}
+                    <div className="relative flex flex-col items-center gap-2 z-10">
+                      {/* Spinning ring */}
+                      <div className="relative h-10 w-10">
+                        <div className="absolute inset-0 rounded-full border-2 border-accent-purple/20" />
+                        <div className="absolute inset-0 rounded-full border-2 border-t-accent-purple border-r-accent-cyan border-b-transparent border-l-transparent animate-spin" />
+                        <div className="absolute inset-1.5 flex items-center justify-center">
+                          <Cpu className="h-3.5 w-3.5 text-accent-cyan opacity-80" />
+                        </div>
+                      </div>
+
+                      {/* Timer */}
+                      <div className="text-center">
+                        <span className="text-[18px] font-black text-white tabular-nums leading-none tracking-tighter">
+                          {fmtTime(elapsed)}
+                        </span>
+                      </div>
+
+                      {/* Status text */}
+                      <div className="text-center space-y-0.5">
+                        <p className="text-[7px] font-bold text-accent-cyan uppercase tracking-widest animate-pulse">
+                          Windmill gerando
+                        </p>
+                        <p className="text-[6px] text-white/40 font-medium">
+                          gpt-image-2 · slide {activeSlideIndex + 1}/{slides.length}
+                        </p>
+                      </div>
+
+                      {/* Dot progress indicators */}
+                      <div className="flex gap-1 mt-1">
+                        {slides.map((s, i) => (
+                          <span key={i} className={`h-1 rounded-full transition-all duration-500 ${
+                            s.imageUrl
+                              ? 'w-3 bg-emerald-400'
+                              : s.isGeneratingImage
+                                ? 'w-3 bg-accent-purple animate-pulse'
+                                : 'w-1 bg-white/20'
+                          }`} />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}

@@ -68,6 +68,7 @@ interface AppContextType {
   handleSelectIdea: (hook: string, structure: string) => void;
   upgradeModalOpen: boolean;
   setUpgradeModalOpen: (open: boolean) => void;
+  upgradeReason: 'subscription_required' | 'usage_limit_reached' | null;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -107,13 +108,25 @@ const INITIAL_CALENDAR_ITEMS: EditorialItem[] = [
   { id: 'c5', day: 'Sex', dayNumber: 12, platform: 'instagram', time: '12:00', title: 'Design Figma System', status: 'draft' },
 ];
 
+const defaultBrandKit = {
+  brandName:   '',
+  brandHandle: '',
+  avatarUrl:   '',
+  aiBio:       '',
+};
+
 export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [brandKit, setBrandKit] = useState({
-    brandName: 'Seu Nome',
-    brandHandle: '@seu.usuario',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100&h=100',
-    aiBio: 'Estrategista de Growth e Criador de Conteúdo Digital.',
-  });
+  const [brandKit, setBrandKitState] = useState(defaultBrandKit);
+
+  // Load profile from DB on mount
+  React.useEffect(() => {
+    fetch('/api/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setBrandKitState(data); })
+      .catch(() => { /* silent — keep defaults */ });
+  }, []);
+
+  const setBrandKit = setBrandKitState;
 
   const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
 
@@ -148,6 +161,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isGeneratingCarousel, setIsGeneratingCarousel] = useState<boolean>(false);
   const [lastCarouselSource, setLastCarouselSource] = useState<'ai' | 'fallback' | null>(null);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState<boolean>(false);
+  const [upgradeReason, setUpgradeReason] = useState<'subscription_required' | 'usage_limit_reached' | null>(null);
   const currentCarouselIdRef = useRef<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [scheduledItems, setScheduledItems] = useState<EditorialItem[]>(INITIAL_CALENDAR_ITEMS);
@@ -373,6 +387,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           const { id: carouselId } = await saveRes.json();
 
           currentCarouselIdRef.current = carouselId;
+          // Refresh usage counter after successful save
+          loadSubscription();
 
           if (lockedRef) {
             // Reference image: use direct API (Windmill doesn't support it yet)
@@ -391,10 +407,17 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             startPolling(carouselId, generated.map(s => s.id));
           }
         } else if (saveRes.status === 402) {
+          const errBody = await saveRes.json().catch(() => ({}));
+          setUpgradeReason(errBody?.error === 'usage_limit_reached' ? 'usage_limit_reached' : 'subscription_required');
           setUpgradeModalOpen(true);
           setSlides([]);
+        } else if (saveRes.status === 503) {
+          // Subscription service unavailable — still generate images directly
+          console.warn('[carousel] subscription check unavailable, falling back to direct API');
+          generateSlideImagesDirect(generated, lockedStyle, lockedHandle, lockedRef ?? '').catch(console.error);
         } else {
           // DB save failed — fallback to direct API
+          console.warn('[carousel] save failed, falling back to direct API:', saveRes.status);
           generateSlideImagesDirect(generated, lockedStyle, lockedHandle, lockedRef ?? '').catch(console.error);
         }
       }
@@ -601,7 +624,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       handleGenerateTextPost,
       handleSelectItem,
       handleSelectIdea,
-      upgradeModalOpen, setUpgradeModalOpen,
+      upgradeModalOpen, setUpgradeModalOpen, upgradeReason,
     }}>
       {children}
     </AppContext.Provider>

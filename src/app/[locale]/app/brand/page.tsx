@@ -1,15 +1,8 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { useSession } from 'next-auth/react';
-import { Palette, User, Check, Globe, Link2, Link2Off, Loader2, AlertCircle } from 'lucide-react';
-
-const PRESET_AVATARS = [
-  { name: 'Brenda Reis', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100&h=100' },
-  { name: 'Alex Silva',  url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100&h=100' },
-  { name: 'Sofia Costa', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100&h=100' },
-  { name: 'Felipe Nunes',url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100&h=100' },
-];
+import { Palette, User, Check, Globe, Link2, Link2Off, Loader2, AlertCircle, Upload, X } from 'lucide-react';
 
 interface MetaStatus {
   connected: boolean;
@@ -37,6 +30,30 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+// Resize an image File to max 200×200 px and return as data URL
+function resizeImage(file: File, maxSize = 200): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = reject;
+      img.src = e.target!.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function BrandKitPage() {
   const { brandKit, setBrandKit } = useAppContext();
   const { data: session } = useSession();
@@ -45,12 +62,28 @@ export default function BrandKitPage() {
   const [handle, setHandle] = useState(brandKit.brandHandle);
   const [avatar, setAvatar] = useState(brandKit.avatarUrl);
   const [bio,    setBio]    = useState(brandKit.aiBio);
-  const [saved,  setSaved]  = useState(false);
+  const [saving,    setSaving]    = useState(false);
+  const [saved,     setSaved]     = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  const [metaStatus,       setMetaStatus]       = useState<MetaStatus | null>(null);
-  const [metaLoading,      setMetaLoading]       = useState(true);
-  const [disconnecting,    setDisconnecting]     = useState(false);
-  const [metaError,        setMetaError]         = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [metaStatus,    setMetaStatus]    = useState<MetaStatus | null>(null);
+  const [metaLoading,   setMetaLoading]   = useState(true);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [metaError,     setMetaError]     = useState('');
+
+  // Sync form when context loads from DB (runs once after initial fetch)
+  const synced = useRef(false);
+  useEffect(() => {
+    if (!synced.current && (brandKit.brandName || brandKit.brandHandle || brandKit.avatarUrl || brandKit.aiBio)) {
+      synced.current = true;
+      setName(brandKit.brandName);
+      setHandle(brandKit.brandHandle);
+      setAvatar(brandKit.avatarUrl);
+      setBio(brandKit.aiBio);
+    }
+  }, [brandKit]);
 
   // Read URL params for Meta OAuth result
   useEffect(() => {
@@ -75,7 +108,14 @@ export default function BrandKitPage() {
   useEffect(() => {
     fetch('/api/meta/status')
       .then(r => r.json())
-      .then(d => setMetaStatus(d))
+      .then((d: MetaStatus) => {
+        setMetaStatus(d);
+        // Auto-fill handle from connected Instagram
+        if (d?.connected && d.instagramName) {
+          const igHandle = `@${d.instagramName}`;
+          setHandle(igHandle);
+        }
+      })
       .catch(() => setMetaStatus({ connected: false, instagramId: null, instagramName: null, pageName: null }))
       .finally(() => setMetaLoading(false));
   }, []);
@@ -87,11 +127,44 @@ export default function BrandKitPage() {
     setDisconnecting(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    setUploading(true);
+    try {
+      const dataUrl = await resizeImage(file);
+      setAvatar(dataUrl);
+    } catch {
+      // ignore — keep current avatar
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBrandKit({ brandName: name, brandHandle: handle, avatarUrl: avatar, aiBio: bio });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSaving(true);
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brandName: name, brandHandle: handle, aiBio: bio, avatarUrl: avatar }),
+      });
+      if (!res.ok) throw new Error('Falha ao salvar');
+      const { avatarUrl: savedUrl } = await res.json();
+      const finalAvatar = savedUrl || avatar;
+      setAvatar(finalAvatar);
+      // Update context state (no extra DB call — already saved above)
+      setBrandKit({ brandName: name, brandHandle: handle, avatarUrl: finalAvatar, aiBio: bio });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {
+      // keep form state as-is
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -123,22 +196,70 @@ export default function BrandKitPage() {
             <div className="space-y-1">
               <label className="text-[11px] font-semibold text-dark-muted">@ Handle / Instagram</label>
               <input type="text" value={handle} onChange={e => setHandle(e.target.value)} className="interactive-input" placeholder="@seu.usuario" />
+              {metaStatus?.connected && metaStatus.instagramName && (
+                <p className="text-[10px] text-emerald-400">Preenchido automaticamente do Instagram conectado</p>
+              )}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[11px] font-semibold text-dark-muted block">Avatar do Perfil</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {PRESET_AVATARS.map(p => (
-                <button key={p.name} type="button" onClick={() => setAvatar(p.url)}
-                  className={`p-2 rounded-xl border flex items-center gap-2 transition-all ${
-                    avatar === p.url ? 'border-accent-purple bg-accent-purple/10 text-white' : 'bg-dark-border/30 border-dark-border text-dark-muted hover:text-white'
-                  }`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.url} alt={p.name} className="h-8 w-8 rounded-full object-cover border border-white/10" />
-                  <span className="text-[9px] font-bold leading-tight truncate">{p.name.split(' ')[0]}</span>
+          {/* Avatar upload */}
+          <div className="space-y-3">
+            <label className="text-[11px] font-semibold text-dark-muted block">Foto de Perfil</label>
+            <div className="flex items-center gap-4">
+              {/* Preview */}
+              <div className="relative flex-shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={avatar}
+                  alt="Avatar preview"
+                  className="h-16 w-16 rounded-full object-cover border-2 border-accent-purple"
+                />
+                {uploading && (
+                  <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-white" />
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border border-accent-purple/30 bg-accent-purple/10 text-accent-purple hover:bg-accent-purple/20 transition-all disabled:opacity-50"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  {uploading ? 'Carregando...' : 'Enviar foto'}
                 </button>
-              ))}
+                <button
+                  type="button"
+                  onClick={() => setAvatar('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100&h=100')}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border border-dark-border text-dark-muted hover:text-white hover:border-white/20 transition-all"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Remover foto
+                </button>
+              </div>
+
+              {/* URL input fallback */}
+              <div className="flex-1 min-w-0">
+                <label className="text-[10px] text-dark-muted block mb-1">Ou cole uma URL de imagem</label>
+                <input
+                  type="url"
+                  value={avatar.startsWith('data:') ? '' : avatar}
+                  onChange={e => e.target.value && setAvatar(e.target.value)}
+                  className="interactive-input text-[11px]"
+                  placeholder="https://..."
+                />
+              </div>
             </div>
           </div>
 
@@ -155,9 +276,10 @@ export default function BrandKitPage() {
                 <Check className="h-3.5 w-3.5" /> Salvo!
               </span>
             ) : <div />}
-            <button type="submit"
-              className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan hover:shadow-[0_0_16px_rgba(139,92,246,0.4)] transition-all">
-              Salvar alterações
+            <button type="submit" disabled={saving}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan hover:shadow-[0_0_16px_rgba(139,92,246,0.4)] transition-all disabled:opacity-60">
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {saving ? 'Salvando...' : 'Salvar alterações'}
             </button>
           </div>
         </form>

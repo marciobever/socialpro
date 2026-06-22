@@ -246,7 +246,8 @@ export default function DashboardPage() {
     handleGenerateCarousel, handleRegenerateSlideImage, handleRegenerateAllImages,
     handleRefineCaption, handleGenerateTextPost,
     subscription,
-    upgradeModalOpen, setUpgradeModalOpen,
+    upgradeModalOpen, setUpgradeModalOpen, upgradeReason,
+    loadSubscription,
   } = useAppContext();
 
   const [copied,           setCopied]           = React.useState(false);
@@ -395,24 +396,71 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Subscription usage bar ── */}
-        {subscription && (
-          <div className="glass-panel rounded-2xl border border-dark-border px-4 py-3 space-y-1.5">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-dark-muted font-semibold">
-                {subscription.carousels_used} de {subscription.carousel_limit} carrosséis usados este mês
-              </span>
-              <span className="text-dark-muted capitalize">
-                {subscription.plan_id === 'intro' ? 'Mês Intro' : subscription.plan_id === 'pro' ? 'Pro' : 'Free'}
-              </span>
+        {subscription && (() => {
+          const used      = subscription.carousels_used;
+          const limit     = subscription.carousel_limit;
+          const remaining = Math.max(limit - used, 0);
+          const pct       = limit > 0 ? Math.min((used / limit) * 100, 100) : 100;
+          const planLabels: Record<string, string> = { free: 'Free', intro: 'Intro', pro: 'Pro', agency: 'Agency' };
+          const planLabel = planLabels[subscription.plan_id] ?? subscription.plan_id;
+          const isWarning = remaining > 0 && remaining <= 3;
+          const isEmpty   = limit === 0 || (subscription.status !== 'active' && subscription.status !== 'trialing');
+          const barColor  = isEmpty || remaining === 0
+            ? 'bg-red-500'
+            : isWarning
+              ? 'bg-gradient-to-r from-amber-400 to-orange-400'
+              : 'bg-gradient-to-r from-accent-purple to-accent-cyan';
+          const borderColor = isEmpty || remaining === 0
+            ? 'border-red-500/30'
+            : isWarning
+              ? 'border-amber-500/30'
+              : 'border-dark-border';
+
+          return (
+            <div className={`glass-panel rounded-2xl border ${borderColor} px-4 py-3 space-y-2 transition-colors`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-dark-muted">Gerações este mês</span>
+                  <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border tracking-wider ${
+                    subscription.status === 'active' || subscription.status === 'trialing'
+                      ? 'bg-accent-purple/10 border-accent-purple/20 text-accent-purple'
+                      : 'bg-white/5 border-white/10 text-dark-muted'
+                  }`}>{planLabel}</span>
+                </div>
+                {isEmpty ? (
+                  <span className="text-[10px] font-bold text-red-400">Sem plano ativo</span>
+                ) : (
+                  <span className={`text-[11px] font-extrabold ${remaining === 0 ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-white'}`}>
+                    {remaining} restantes
+                  </span>
+                )}
+              </div>
+              <div className="h-2 w-full rounded-full bg-dark-border overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                  style={{ width: `${pct}%` }} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] text-dark-muted">{used} de {limit} usados</span>
+                {(isWarning || remaining === 0) && !isEmpty && (
+                  <button
+                    onClick={() => { setUpgradeModalOpen(true); }}
+                    className="text-[9px] font-bold text-accent-cyan hover:underline"
+                  >
+                    {remaining === 0 ? 'Limite atingido — fazer upgrade' : 'Upgrade para mais gerações →'}
+                  </button>
+                )}
+                {isEmpty && (
+                  <button
+                    onClick={() => setUpgradeModalOpen(true)}
+                    className="text-[9px] font-bold text-accent-cyan hover:underline"
+                  >
+                    Assinar um plano →
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="h-1.5 w-full rounded-full bg-dark-border overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-accent-purple to-accent-cyan transition-all duration-500"
-                style={{ width: `${Math.min((subscription.carousels_used / Math.max(subscription.carousel_limit, 1)) * 100, 100)}%` }}
-              />
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ── Style picker (Instagram only) — before the generator ── */}
         {isCarousel && <StylePicker styleModel={styleModel} onSelect={setStyleModel} disabled={isGeneratingCarousel} />}
@@ -633,50 +681,99 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Upgrade modal ── */}
-      {upgradeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setUpgradeModalOpen(false)} />
-          <div className="relative glass-panel rounded-3xl border border-dark-border p-6 w-full max-w-sm space-y-5 shadow-2xl animate-fade-in">
-            <button onClick={() => setUpgradeModalOpen(false)} className="absolute top-4 right-4 text-dark-muted hover:text-dark-text transition-colors">
-              <X className="h-5 w-5" />
-            </button>
+      {upgradeModalOpen && (() => {
+        const isNoSub = !upgradeReason || upgradeReason === 'subscription_required';
+        const used    = subscription?.carousels_used ?? 0;
+        const limit   = subscription?.carousel_limit ?? 0;
 
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-accent-purple uppercase tracking-wider">Limite atingido</p>
-              <h2 className="text-xl font-bold text-dark-text leading-tight">
-                Você usou todos os carrosséis do mês
-              </h2>
-              <p className="text-sm text-dark-muted leading-relaxed pt-1">
-                Faça upgrade para o plano Pro e gere até <span className="text-dark-text font-semibold">15 carrosséis por mês</span> por apenas R$29,99.
-              </p>
-            </div>
+        const handleCheckout = async (plan: string) => {
+          setUpgradeModalOpen(false);
+          const res = await fetch('/api/stripe/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan }),
+          });
+          if (res.ok) {
+            const { url } = await res.json();
+            if (url) window.location.href = url;
+          }
+        };
 
-            <div className="rounded-2xl border border-accent-purple/30 bg-accent-purple/10 p-4 space-y-2">
-              <p className="text-xs font-bold text-dark-text">Plano Pro — R$29,99/mês</p>
-              {['15 carrosséis por mês', 'Geração de imagens via IA', 'Publicação direta no Instagram', 'Suporte prioritário'].map(f => (
-                <div key={f} className="flex items-center gap-2 text-xs text-dark-muted">
-                  <Check className="h-3.5 w-3.5 text-accent-purple flex-shrink-0" />
-                  {f}
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setUpgradeModalOpen(false)} />
+            <div className="relative glass-panel rounded-3xl border border-dark-border p-6 w-full max-w-sm space-y-5 shadow-2xl animate-fade-in">
+              <button onClick={() => setUpgradeModalOpen(false)} className="absolute top-4 right-4 text-dark-muted hover:text-dark-text transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+
+              {/* Header */}
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-accent-purple uppercase tracking-wider">
+                  {isNoSub ? 'Plano necessário' : 'Limite atingido'}
+                </p>
+                <h2 className="text-xl font-bold text-dark-text leading-tight">
+                  {isNoSub
+                    ? 'Escolha um plano para continuar'
+                    : 'Você usou todos os carrosséis do mês'}
+                </h2>
+                <p className="text-sm text-dark-muted leading-relaxed pt-1">
+                  {isNoSub
+                    ? 'Para gerar carrosséis com IA você precisa de uma assinatura ativa.'
+                    : `Você gerou ${used} de ${limit} carrosséis este mês. Faça upgrade para continuar criando.`}
+                </p>
+              </div>
+
+              {/* Plans */}
+              <div className="space-y-3">
+                {/* Pro */}
+                <div className="rounded-2xl border border-accent-purple/40 bg-accent-purple/10 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-white">Plano Pro</p>
+                    <p className="text-xs font-bold text-accent-cyan">R$29,99/mês</p>
+                  </div>
+                  {['15 carrosséis por mês', 'Imagens geradas por IA', 'Publicação direta no Instagram', 'Analytics + Calendário'].map(f => (
+                    <div key={f} className="flex items-center gap-2 text-xs text-dark-muted">
+                      <Check className="h-3 w-3 text-accent-purple flex-shrink-0" />
+                      {f}
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => handleCheckout('pro')}
+                    className="btn-press w-full mt-2 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] transition-all"
+                  >
+                    Assinar Pro
+                  </button>
                 </div>
-              ))}
-            </div>
 
-            <button
-              onClick={async () => {
-                setUpgradeModalOpen(false);
-                const res = await fetch('/api/stripe/checkout', { method: 'POST' });
-                if (res.ok) {
-                  const { url } = await res.json();
-                  if (url) window.location.href = url;
-                }
-              }}
-              className="btn-press w-full py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] transition-all"
-            >
-              Fazer Upgrade Agora
-            </button>
+                {/* Agency */}
+                <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-white">Plano Agency</p>
+                    <p className="text-xs font-bold text-dark-muted">R$79,99/mês</p>
+                  </div>
+                  {['60 carrosséis por mês', 'Tudo do Pro', 'Multi Brand Kits', 'Exportação Figma/PDF'].map(f => (
+                    <div key={f} className="flex items-center gap-2 text-xs text-dark-muted">
+                      <Check className="h-3 w-3 text-dark-muted flex-shrink-0" />
+                      {f}
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => handleCheckout('agency')}
+                    className="btn-press w-full mt-2 py-2.5 rounded-xl text-xs font-bold border border-white/10 text-dark-muted hover:text-white hover:border-white/20 transition-all"
+                  >
+                    Assinar Agency
+                  </button>
+                </div>
+              </div>
+
+              <button onClick={() => setUpgradeModalOpen(false)} className="w-full text-[10px] text-dark-muted hover:text-dark-text transition-colors">
+                Fechar
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </>
   );
 }

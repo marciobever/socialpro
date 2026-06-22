@@ -175,13 +175,39 @@ export const CarouselCard: React.FC<CarouselCardProps> = ({
           </button>
         )}
 
-        {/* Progress bar — only when visible */}
+        {/* Per-slide progress indicators */}
         {(isAnyGenerating || imagesReady > 0) && (
-          <div className="h-0.5 bg-dark-border rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-accent-purple to-accent-cyan rounded-full transition-all duration-500"
-              style={{ width: `${(imagesReady / slides.length) * 100}%` }}
-            />
+          <div className="space-y-2">
+            {/* Overall bar */}
+            <div className="h-0.5 bg-dark-border rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-accent-purple to-accent-cyan rounded-full transition-all duration-500"
+                style={{ width: `${(imagesReady / slides.length) * 100}%` }}
+              />
+            </div>
+            {/* Per-slide dots with status */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {slides.map((s, i) => (
+                <div key={s.id} className="flex items-center gap-1" title={s.imageUrl ? `Slide ${i + 1} pronto` : s.isGeneratingImage ? `Slide ${i + 1} gerando…` : `Slide ${i + 1} aguardando`}>
+                  <span className={`h-1.5 rounded-full transition-all duration-500 ${
+                    s.imageUrl
+                      ? 'w-4 bg-emerald-400'
+                      : s.isGeneratingImage
+                        ? 'w-4 bg-accent-purple animate-pulse'
+                        : 'w-1.5 bg-dark-border'
+                  }`} />
+                  {s.isGeneratingImage && !s.imageUrl && (
+                    <span className="text-[8px] text-accent-cyan font-bold animate-pulse">S{i + 1}</span>
+                  )}
+                  {s.imageUrl && (
+                    <span className="text-[8px] text-emerald-400 font-bold">✓</span>
+                  )}
+                </div>
+              ))}
+              <span className="text-[9px] text-dark-muted ml-1">
+                {imagesReady}/{slides.length}
+              </span>
+            </div>
           </div>
         )}
 

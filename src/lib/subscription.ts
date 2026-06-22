@@ -6,7 +6,7 @@ export interface Subscription {
   stripe_subscription_id: string | null;
   stripe_price_id: string | null;
   status: 'free' | 'active' | 'trialing' | 'past_due' | 'canceled';
-  plan_id: 'free' | 'intro' | 'pro';
+  plan_id: 'free' | 'intro' | 'pro' | 'agency';
   carousel_limit: number;
   carousels_used: number;
   period_start: string | null;

@@ -104,6 +104,72 @@ CREATE OR REPLACE TRIGGER trg_carousels_updated_at
 ALTER TABLE carousels ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
+-- Tabela de perfis de criador
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS profiles (
+  user_id       TEXT        PRIMARY KEY,
+  brand_name    TEXT        NOT NULL DEFAULT '',
+  brand_handle  TEXT        NOT NULL DEFAULT '',
+  avatar_url    TEXT        NOT NULL DEFAULT '',
+  ai_bio        TEXT        NOT NULL DEFAULT '',
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE OR REPLACE TRIGGER trg_profiles_updated_at
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================
+-- Tabela de assinaturas (billing)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id                        UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id                   TEXT        NOT NULL UNIQUE,
+
+  stripe_customer_id        TEXT,
+  stripe_subscription_id    TEXT,
+  stripe_price_id           TEXT,
+
+  status                    TEXT        NOT NULL DEFAULT 'free'
+                            CHECK (status IN ('free', 'active', 'trialing', 'past_due', 'canceled')),
+  plan_id                   TEXT        NOT NULL DEFAULT 'free'
+                            CHECK (plan_id IN ('free', 'intro', 'pro', 'agency')),
+
+  carousel_limit            INT         NOT NULL DEFAULT 0,
+  carousels_used            INT         NOT NULL DEFAULT 0,
+
+  period_start              TIMESTAMPTZ,
+  period_end                TIMESTAMPTZ,
+
+  created_at                TIMESTAMPTZ DEFAULT NOW(),
+  updated_at                TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id
+  ON subscriptions (user_id);
+
+CREATE OR REPLACE TRIGGER trg_subscriptions_updated_at
+  BEFORE UPDATE ON subscriptions
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+
+-- Incrementa o contador de carrosséis usados de forma atômica
+CREATE OR REPLACE FUNCTION increment_carousel_usage(p_user_id TEXT)
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE subscriptions
+  SET carousels_used = carousels_used + 1
+  WHERE user_id = p_user_id;
+END;
+$$;
+
+-- ============================================================
 -- Storage bucket para imagens dos carrosséis
 -- Execute também no dashboard: Storage → New bucket
 -- ============================================================

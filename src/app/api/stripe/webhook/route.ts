@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { upsertSubscription } from '@/lib/subscription';
 
-const INTRO_LIMIT = 5;
-const PRO_LIMIT   = 15;
+const INTRO_LIMIT  = 5;
+const PRO_LIMIT    = 15;
+const AGENCY_LIMIT = 60;
 
-function planFromPrice(priceId: string): { plan_id: 'intro' | 'pro'; carousel_limit: number } {
-  return priceId === process.env.STRIPE_INTRO_PRICE_ID
-    ? { plan_id: 'intro', carousel_limit: INTRO_LIMIT }
-    : { plan_id: 'pro',   carousel_limit: PRO_LIMIT  };
+function planFromPrice(priceId: string): { plan_id: 'intro' | 'pro' | 'agency'; carousel_limit: number } {
+  if (priceId === process.env.STRIPE_INTRO_PRICE_ID)  return { plan_id: 'intro',  carousel_limit: INTRO_LIMIT  };
+  if (priceId === process.env.STRIPE_AGENCY_PRICE_ID) return { plan_id: 'agency', carousel_limit: AGENCY_LIMIT };
+  return { plan_id: 'pro', carousel_limit: PRO_LIMIT };
 }
 
 // Stripe v22 removed current_period_* from top-level Subscription type;
