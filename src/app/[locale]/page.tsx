@@ -7,6 +7,7 @@ import { Reveal } from '@/components/landing/Reveal';
 import { AnimatedCarouselPreview } from '@/components/landing/AnimatedCarouselPreview';
 import { AnimatedChart } from '@/components/landing/AnimatedChart';
 import { Footer } from '@/components/Footer';
+import { OrganizationJsonLd, SoftwareApplicationJsonLd, WebSiteJsonLd } from '@/components/JsonLd';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -77,6 +78,9 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-dark-bg text-dark-text relative flex flex-col justify-between overflow-x-hidden">
+      <OrganizationJsonLd />
+      <SoftwareApplicationJsonLd />
+      <WebSiteJsonLd />
       {/* Decorative Orbs */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-accent-purple/10 blur-[120px] animate-glow-pulse pointer-events-none"></div>
       <div className="absolute bottom-[20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-accent-cyan/10 blur-[150px] pointer-events-none"></div>

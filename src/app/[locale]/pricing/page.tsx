@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Check, Sparkles, HelpCircle } from 'lucide-react';
 import { Footer } from '@/components/Footer';
 import { PublicHeader } from '@/components/PublicHeader';
+import { PricingJsonLd } from '@/components/JsonLd';
 
 const PLAN_NAMES: Record<string, string> = {
   starter: 'Starter Creator',
@@ -33,6 +34,7 @@ export default function PricingPage() {
       <div className="absolute bottom-[10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-accent-purple/10 blur-[150px] pointer-events-none" />
       <div className="absolute inset-0 bg-grid-pattern grid-mask pointer-events-none -z-10" />
 
+      <PricingJsonLd />
       <PublicHeader showBack backLabel={t('back')} backHref="/" />
 
       {/* Main */}
