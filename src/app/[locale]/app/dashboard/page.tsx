@@ -610,6 +610,34 @@ function DashboardPage() {
                     </div>
                   ))}
                 </div>
+              ) : slides.length === 0 ? (
+              /* Empty state — guide user to generate first carousel */
+              <div className="flex flex-col items-center justify-center py-10 space-y-5 animate-fade-in">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-purple/20 to-accent-cyan/20 border border-accent-purple/20 flex items-center justify-center animate-float">
+                    <Sparkles className="h-8 w-8 text-accent-purple" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent-cyan animate-ping opacity-60" />
+                </div>
+                <div className="text-center space-y-1.5 max-w-xs">
+                  <h3 className="text-sm font-bold text-dark-text">Pronto para criar?</h3>
+                  <p className="text-xs text-dark-muted leading-relaxed">
+                    Escolha um estilo acima, escreva o tema do carrossel e clique em <span className="text-accent-purple font-semibold">Gerar carrossel</span>.
+                  </p>
+                </div>
+                <div className="flex items-center gap-6 text-[10px] text-dark-muted">
+                  {[
+                    { n: '1', label: 'Escolha o estilo' },
+                    { n: '2', label: 'Digite o tema' },
+                    { n: '3', label: 'Gere e publique' },
+                  ].map(({ n, label }) => (
+                    <div key={n} className="flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-full bg-accent-purple/20 border border-accent-purple/30 text-accent-purple font-bold flex items-center justify-center text-[9px]">{n}</span>
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </div>
               ) : (
               /* Slide grid — min 180px = ~40% taller than before */
               <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
