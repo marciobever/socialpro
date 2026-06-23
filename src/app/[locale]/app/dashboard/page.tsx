@@ -9,7 +9,7 @@ import { Linkedin, Twitter, Instagram } from '@/components/icons';
 import type { PlatformType, Slide, CarouselStyleModel } from '@/types';
 import {
   Copy, Check, Loader2, Send, X, Info, Clock,
-  Download, Plus, RefreshCw, ImageIcon, Wand2, ExternalLink,
+  Download, Plus, RefreshCw, ImageIcon, Wand2, ExternalLink, Calendar, Sparkles,
 } from 'lucide-react';
 
 // ─── Style definitions ───────────────────────────────────────────────────────
@@ -289,10 +289,58 @@ function DashboardPage() {
   const [publishError,   setPublishError]   = React.useState('');
   const [publishPermalink, setPublishPermalink] = React.useState('');
 
+  // Caption variations
+  const [captionVariations, setCaptionVariations] = React.useState<{angle: string; caption: string}[]>([]);
+  const [loadingVariations,  setLoadingVariations]  = React.useState(false);
+  const [showVariations,     setShowVariations]     = React.useState(false);
+
+  // Schedule
+  const [showSchedule,  setShowSchedule]  = React.useState(false);
+  const [scheduleDate,  setScheduleDate]  = React.useState('');
+  const [schedulingSave, setSchedulingSave] = React.useState(false);
+  const [scheduleOk,    setScheduleOk]    = React.useState(false);
+
   const isCarousel    = platform === 'instagram';
   const readyToPublish = isCarousel ? slides.some(s => s.imageUrl) : content.trim().length > 0;
   const activeSlide   = slides[activeSlideIndex];
   const imagesReady   = slides.filter(s => s.imageUrl).length;
+
+  const handleGenerateVariations = async () => {
+    if (!slides.length && !content.trim()) return;
+    setLoadingVariations(true);
+    setShowVariations(true);
+    try {
+      const res = await fetch('/api/ai/caption-variations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: carouselTopic,
+          tone,
+          slides: slides.map(s => ({ title: s.title, subtitle: s.subtitle })),
+          aiBio: brandKit.aiBio,
+        }),
+      });
+      if (res.ok) { const { variations } = await res.json(); setCaptionVariations(variations ?? []); }
+    } catch { /* ignore */ }
+    finally { setLoadingVariations(false); }
+  };
+
+  const handleSchedulePost = async () => {
+    if (!scheduleDate) return;
+    setSchedulingSave(true);
+    try {
+      // Find the current carousel ID from the URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const carouselId = urlParams.get('load');
+      const res = await fetch('/api/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ carouselId, caption: content, scheduledFor: new Date(scheduleDate).toISOString() }),
+      });
+      if (res.ok) { setScheduleOk(true); setTimeout(() => { setScheduleOk(false); setShowSchedule(false); }, 2000); }
+    } catch { /* ignore */ }
+    finally { setSchedulingSave(false); }
+  };
 
   const handleCopyCaption = async () => {
     try { await navigator.clipboard.writeText(content); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /**/ }
@@ -633,16 +681,39 @@ function DashboardPage() {
                 className="interactive-input w-full h-16 resize-none py-2 text-[11px] leading-relaxed"
                 placeholder={t('captionPlaceholder')}
               />
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button onClick={handleRefineCaption} disabled={isGenerating || !content.trim()}
                   className="btn-press flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan disabled:opacity-50 hover:shadow-[0_0_14px_rgba(139,92,246,0.35)] transition-all">
                   {isGenerating ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />{t('refining')}</> : <><Wand2 className="h-3.5 w-3.5" />{t('refine')}</>}
+                </button>
+                <button onClick={handleGenerateVariations} disabled={loadingVariations || !slides.length}
+                  className="btn-press flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-semibold border border-dark-border text-dark-muted hover:text-accent-cyan hover:border-accent-cyan/30 disabled:opacity-50 transition-all">
+                  {loadingVariations ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  3 versões
                 </button>
                 <button onClick={handleCopyCaption} disabled={!content.trim()}
                   className="btn-press flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-semibold border border-dark-border text-dark-muted hover:text-dark-text disabled:opacity-50 transition-all">
                   {copied ? <><Check className="h-3.5 w-3.5 text-emerald-400" />{t('copied')}</> : <><Copy className="h-3.5 w-3.5" />{t('copy')}</>}
                 </button>
               </div>
+
+              {/* Caption variations modal */}
+              {showVariations && (
+                <div className="space-y-2 animate-fade-in border-t border-dark-border pt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-accent-cyan">3 variações de legenda</span>
+                    <button onClick={() => setShowVariations(false)} className="text-dark-muted hover:text-white"><X className="h-3.5 w-3.5" /></button>
+                  </div>
+                  {loadingVariations && <div className="flex justify-center py-3"><Loader2 className="h-5 w-5 animate-spin text-accent-purple" /></div>}
+                  {captionVariations.map((v, i) => (
+                    <div key={i} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 hover:border-accent-purple/30 cursor-pointer transition-colors space-y-1"
+                      onClick={() => { setContent(v.caption); setShowVariations(false); }}>
+                      <span className="text-[9px] font-bold text-accent-purple uppercase tracking-wider">{v.angle}</span>
+                      <p className="text-[10px] text-dark-muted leading-relaxed line-clamp-3">{v.caption}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -661,6 +732,28 @@ function DashboardPage() {
                 ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />{t('downloading')}</>
                 : <><Download className="h-3.5 w-3.5" />{t('downloadImages')} ({slides.filter(s => s.imageUrl).length}/{slides.length})</>}
             </button>
+
+            {/* Schedule post */}
+            {isCarousel && (
+              <div className="space-y-2">
+                <button onClick={() => setShowSchedule(!showSchedule)} disabled={!readyToPublish}
+                  className="btn-press w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[11px] font-bold border border-dark-border text-dark-text hover:border-accent-cyan/40 hover:bg-accent-cyan/5 disabled:opacity-40 transition-all">
+                  <Calendar className="h-3.5 w-3.5 text-accent-cyan" />
+                  {scheduleOk ? '✓ Agendado!' : 'Agendar publicação'}
+                </button>
+                {showSchedule && (
+                  <div className="space-y-2 animate-fade-in">
+                    <input type="datetime-local" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                      className="interactive-input w-full text-[11px] py-2" />
+                    <button onClick={handleSchedulePost} disabled={!scheduleDate || schedulingSave}
+                      className="w-full py-2 rounded-xl text-[11px] font-bold text-white bg-gradient-to-r from-accent-cyan to-accent-purple disabled:opacity-50 transition-all">
+                      {schedulingSave ? <Loader2 className="h-3.5 w-3.5 animate-spin mx-auto" /> : 'Confirmar agendamento'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Publish to Instagram */}
             <button
