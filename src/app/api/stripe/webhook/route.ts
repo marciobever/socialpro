@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { upsertSubscription } from '@/lib/subscription';
 
-const INTRO_LIMIT  = 5;
-const PRO_LIMIT    = 15;
+const INTRO_LIMIT  = 25;
+const PRO_LIMIT    = 25;
 const AGENCY_LIMIT = 60;
 
 function planFromPrice(priceId: string): { plan_id: 'intro' | 'pro' | 'agency'; carousel_limit: number } {

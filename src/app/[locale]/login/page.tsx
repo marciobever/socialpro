@@ -31,7 +31,7 @@ const PLAN_INFO: Record<string, { name: string; price: string; color: string; fe
     name: 'Pro Creator',
     price: 'USD$29/mês',
     color: 'from-accent-purple to-accent-cyan',
-    features: ['15 carrosséis/mês com IA', 'Imagens geradas por IA', 'Publicação no Instagram'],
+    features: ['25 carrosséis/mês com IA', 'Imagens geradas por IA', 'Publicação no Instagram'],
   },
   agency: {
     name: 'Agency Scale',

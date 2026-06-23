@@ -759,7 +759,7 @@ function DashboardPage() {
                     <p className="text-xs font-bold text-white">Plano Pro</p>
                     <p className="text-xs font-bold text-accent-cyan">R$29,99/mês</p>
                   </div>
-                  {['15 carrosséis por mês', 'Imagens geradas por IA', 'Publicação direta no Instagram', 'Analytics + Calendário'].map(f => (
+                  {['25 carrosséis por mês', 'Imagens geradas por IA', 'Publicação direta no Instagram', 'Analytics + Calendário'].map(f => (
                     <div key={f} className="flex items-center gap-2 text-xs text-dark-muted">
                       <Check className="h-3 w-3 text-accent-purple flex-shrink-0" />
                       {f}
