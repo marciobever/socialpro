@@ -170,6 +170,33 @@ END;
 $$;
 
 -- ============================================================
+-- Tabela de posts agendados
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS scheduled_posts (
+  id             UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id        TEXT        NOT NULL,
+  carousel_id    UUID        REFERENCES carousels(id) ON DELETE CASCADE,
+  caption        TEXT,
+  scheduled_for  TIMESTAMPTZ NOT NULL,
+  status         TEXT        NOT NULL DEFAULT 'pending'
+                 CHECK (status IN ('pending', 'published', 'failed', 'canceled')),
+  published_at   TIMESTAMPTZ,
+  error_message  TEXT,
+  created_at     TIMESTAMPTZ DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_scheduled_posts_user_id ON scheduled_posts (user_id);
+CREATE INDEX IF NOT EXISTS idx_scheduled_posts_scheduled_for ON scheduled_posts (scheduled_for);
+
+CREATE OR REPLACE TRIGGER trg_scheduled_posts_updated_at
+  BEFORE UPDATE ON scheduled_posts
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+ALTER TABLE scheduled_posts ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================
 -- Storage bucket para imagens dos carrosséis
 -- Execute também no dashboard: Storage → New bucket
 -- ============================================================

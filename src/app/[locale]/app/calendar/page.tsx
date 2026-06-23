@@ -1,245 +1,199 @@
 "use client";
-import React, { useState } from 'react';
-import { useAppContext } from '@/context/AppContext';
-import type { PlatformType, EditorialItem } from '@/types';
-import { Calendar, Clock, Plus, Filter, Trash2 } from 'lucide-react';
-import { Linkedin, Twitter, Instagram } from '@/components/icons';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Calendar, Clock, Trash2, Plus, Loader2, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 
-export default function DetailedCalendarPage() {
-  const { scheduledItems, handleAddScheduledItem, handleDeleteScheduledItem } = useAppContext();
-  const [filterPlatform, setFilterPlatform] = useState<PlatformType | 'all'>('all');
-  const [newTitle, setNewTitle] = useState<string>('');
-  const [newPlatform, setNewPlatform] = useState<PlatformType>('linkedin');
-  const [newDay, setNewDay] = useState<string>('Seg');
-  const [newTime, setNewTime] = useState<string>('09:00');
-  const [showAddForm, setShowAddForm] = useState<boolean>(false);
+interface ScheduledPost {
+  id: string;
+  carousel_id: string;
+  caption: string | null;
+  scheduled_for: string;
+  status: 'pending' | 'published' | 'failed' | 'canceled';
+  published_at: string | null;
+  error_message: string | null;
+}
 
-  // Filters items by selected platform
-  const filteredItems = scheduledItems.filter(item => 
-    filterPlatform === 'all' ? true : item.platform === filterPlatform
+const STATUS_MAP = {
+  pending:   { label: 'Agendado',  cls: 'bg-accent-purple/10 border-accent-purple/20 text-accent-purple' },
+  published: { label: 'Publicado', cls: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
+  failed:    { label: 'Falhou',    cls: 'bg-red-500/10 border-red-500/20 text-red-400' },
+  canceled:  { label: 'Cancelado', cls: 'bg-white/5 border-white/10 text-dark-muted' },
+};
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('pt-BR', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function groupByDate(posts: ScheduledPost[]) {
+  const groups: Record<string, ScheduledPost[]> = {};
+  posts.forEach(p => {
+    const date = new Date(p.scheduled_for).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+    if (!groups[date]) groups[date] = [];
+    groups[date].push(p);
+  });
+  return groups;
+}
+
+function PostCard({ post, onDelete, deleting }: { post: ScheduledPost; onDelete: (id: string) => void; deleting: boolean }) {
+  const status = STATUS_MAP[post.status];
+  return (
+    <div className="glass-panel rounded-2xl border border-dark-border p-4 flex items-start gap-4 hover:border-white/10 transition-colors">
+      <div className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/20 flex-shrink-0">
+        <Calendar className="h-4 w-4 text-pink-400" />
+      </div>
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border tracking-wider ${status.cls}`}>
+            {status.label}
+          </span>
+          <div className="flex items-center gap-1 text-[10px] text-dark-muted">
+            <Clock className="h-3 w-3" />
+            {formatDate(post.scheduled_for)}
+          </div>
+        </div>
+        {post.caption && (
+          <p className="text-xs text-dark-muted line-clamp-2 leading-relaxed">{post.caption}</p>
+        )}
+        {post.status === 'published' && post.published_at && (
+          <div className="flex items-center gap-1 text-[10px] text-emerald-400">
+            <CheckCircle2 className="h-3 w-3" />
+            Publicado em {formatDate(post.published_at)}
+          </div>
+        )}
+        {post.status === 'failed' && post.error_message && (
+          <div className="flex items-center gap-1 text-[10px] text-red-400">
+            <AlertCircle className="h-3 w-3" />
+            {post.error_message}
+          </div>
+        )}
+      </div>
+      {post.status === 'pending' && (
+        <button onClick={() => onDelete(post.id)} disabled={deleting}
+          className="p-1.5 rounded-lg text-dark-muted hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50 flex-shrink-0">
+          {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+        </button>
+      )}
+    </div>
   );
+}
 
-  const getPlatformIcon = (platform: string) => {
-    switch (platform) {
-      case 'linkedin': return <Linkedin className="h-4 w-4 text-[#0077b5]" />;
-      case 'x': return <Twitter className="h-4 w-4 text-white" />;
-      case 'instagram': return <Instagram className="h-4 w-4 text-[#e1306c]" />;
-      default: return null;
-    }
+export default function CalendarPage() {
+  const router = useRouter();
+  const [posts, setPosts] = useState<ScheduledPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/schedule');
+      if (res.ok) { const { posts: p } = await res.json(); setPosts(p ?? []); }
+    } finally { setLoading(false); }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'published':
-        return <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">Publicado</span>;
-      case 'scheduled':
-        return <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-accent-cyan/10 border border-accent-cyan/20 text-accent-cyan">Agendado</span>;
-      case 'draft':
-      default:
-        return <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-dark-muted">Rascunho</span>;
-    }
+  useEffect(() => { load(); }, []);
+
+  const handleDelete = async (id: string) => {
+    setDeleting(id);
+    await fetch('/api/schedule', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    setPosts(prev => prev.filter(p => p.id !== id));
+    setDeleting(null);
   };
 
-  const handleCreateItem = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
-
-    const daysNumbersMap: Record<string, number> = {
-      'Seg': 8, 'Ter': 9, 'Qua': 10, 'Qui': 11, 'Sex': 12, 'Sáb': 13, 'Dom': 14
-    };
-
-    const newItem: EditorialItem = {
-      id: Math.random().toString(36).substr(2, 9),
-      day: newDay,
-      dayNumber: daysNumbersMap[newDay] || 8,
-      platform: newPlatform,
-      time: newTime,
-      title: newTitle,
-      status: 'scheduled',
-    };
-
-    handleAddScheduledItem(newItem);
-    setNewTitle('');
-    setShowAddForm(false);
-  };
+  const pending   = posts.filter(p => p.status === 'pending');
+  const published = posts.filter(p => p.status === 'published');
+  const groups    = groupByDate(pending);
 
   return (
-    <div className="flex-1 space-y-8 max-w-5xl mx-auto py-4 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="space-y-1">
-          <span className="text-[10px] tracking-widest font-extrabold text-accent-pink uppercase">Calendário</span>
-          <h2 className="font-display text-2xl font-bold text-white tracking-tight">Cronograma de Publicações</h2>
-          <p className="text-xs text-dark-muted">Gerencie o agendamento de postagens do estúdio</p>
-        </div>
+    <div className="min-h-[calc(100vh-64px)] py-8 px-4 md:px-8 max-w-4xl mx-auto space-y-8 animate-fade-in">
 
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="relative group overflow-hidden rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-black hover:text-white border border-white/10 flex items-center justify-center gap-1.5 self-start sm:self-auto"
-        >
-          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-accent-purple to-accent-cyan opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <Plus className="h-4 w-4" />
-          <span>Agendar Novo Post</span>
-        </button>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-dark-text flex items-center gap-2">
+            <Calendar className="h-6 w-6 text-accent-purple" />
+            Calendário Editorial
+          </h1>
+          <p className="text-sm text-dark-muted mt-0.5">Posts agendados e histórico de publicações</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={load} disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dark-border text-xs text-dark-muted hover:text-dark-text hover:bg-white/5 transition-all disabled:opacity-50">
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </button>
+          <button onClick={() => router.push('/app/dashboard')}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan hover:shadow-[0_0_12px_rgba(139,92,246,0.4)] transition-all">
+            <Plus className="h-3.5 w-3.5" /> Criar carrossel
+          </button>
+        </div>
       </div>
 
-      {/* Add Post Modal / Form Overlay */}
-      {showAddForm && (
-        <form onSubmit={handleCreateItem} className="glass-panel p-6 rounded-3xl border border-white/5 bg-[#0d0f17]/90 space-y-4 max-w-xl animate-fade-in">
-          <h3 className="font-display text-sm font-bold text-white tracking-tight">Agendar Conteúdo</h3>
-          
-          <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold text-dark-muted tracking-wider">Título da Postagem</label>
-            <input
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              className="interactive-input"
-              placeholder="Ex: 5 erros fatais de SEO em blogs"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Platform selection */}
-            <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold text-dark-muted tracking-wider">Rede</label>
-              <select
-                value={newPlatform}
-                onChange={(e) => setNewPlatform(e.target.value as PlatformType)}
-                className="interactive-input bg-dark-bg text-xs"
-              >
-                <option value="linkedin">LinkedIn</option>
-                <option value="x">X / Twitter</option>
-                <option value="instagram">Instagram</option>
-              </select>
-            </div>
-
-            {/* Day selection */}
-            <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold text-dark-muted tracking-wider">Dia da Semana</label>
-              <select
-                value={newDay}
-                onChange={(e) => setNewDay(e.target.value)}
-                className="interactive-input bg-dark-bg text-xs"
-              >
-                <option value="Seg">Segunda (08)</option>
-                <option value="Ter">Terça (09)</option>
-                <option value="Qua">Quarta (10)</option>
-                <option value="Qui">Quinta (11)</option>
-                <option value="Sex">Sexta (12)</option>
-                <option value="Sáb">Sábado (13)</option>
-                <option value="Dom">Domingo (14)</option>
-              </select>
-            </div>
-
-            {/* Time selection */}
-            <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold text-dark-muted tracking-wider">Horário</label>
-              <input
-                type="text"
-                value={newTime}
-                onChange={(e) => setNewTime(e.target.value)}
-                className="interactive-input text-xs"
-                placeholder="Ex: 09:00"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => setShowAddForm(false)}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-white/5 border border-white/10 hover:bg-white/10 text-white transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-accent-cyan text-black hover:bg-white hover:text-black transition-all"
-            >
-              Confirmar
-            </button>
-          </div>
-        </form>
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-accent-purple" />
+        </div>
       )}
 
-      {/* Main Grid: Filters & Listing */}
-      <div className="glass-panel rounded-3xl p-6 border border-white/5 space-y-6">
-        {/* Filters bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/5">
-          <div className="flex items-center gap-2 text-xs font-bold text-white">
-            <Filter className="h-4 w-4 text-accent-cyan" />
-            <span>Filtrar por Rede</span>
+      {!loading && posts.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-24 space-y-4 text-center">
+          <div className="p-4 rounded-2xl bg-accent-purple/10 border border-accent-purple/20">
+            <Calendar className="h-8 w-8 text-accent-purple" />
           </div>
-
-          <div className="flex gap-2">
-            {[
-              { id: 'all', name: 'Todos' },
-              { id: 'linkedin', name: 'LinkedIn' },
-              { id: 'x', name: 'X / Twitter' },
-              { id: 'instagram', name: 'Instagram' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setFilterPlatform(tab.id as PlatformType | 'all')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                  filterPlatform === tab.id
-                    ? 'bg-accent-purple text-white border-accent-purple/30'
-                    : 'bg-white/5 border-white/5 text-dark-muted hover:text-white hover:bg-white/10'
-                }`}
-              >
-                {tab.name}
-              </button>
-            ))}
-          </div>
+          <h2 className="text-lg font-bold text-dark-text">Calendário vazio</h2>
+          <p className="text-sm text-dark-muted max-w-sm">
+            Gere um carrossel no Estúdio e agende a publicação para uma data específica.
+          </p>
+          <button onClick={() => router.push('/app/dashboard')}
+            className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan">
+            Ir para o Estúdio
+          </button>
         </div>
+      )}
 
-        {/* Detailed List */}
-        <div className="space-y-3">
-          {filteredItems.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-white/5 rounded-2xl">
-              <p className="text-sm text-dark-muted">Nenhum post agendado nesta categoria</p>
+      {!loading && posts.length > 0 && (
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { label: 'Agendados',  value: pending.length,   color: 'text-accent-purple' },
+            { label: 'Publicados', value: published.length, color: 'text-emerald-400' },
+            { label: 'Total',      value: posts.length,     color: 'text-white' },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="glass-panel rounded-2xl border border-dark-border p-4 text-center">
+              <p className={`text-2xl font-black ${color}`}>{value}</p>
+              <p className="text-[10px] text-dark-muted mt-0.5">{label}</p>
             </div>
-          ) : (
-            filteredItems.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 hover:border-white/10 p-4 rounded-2xl flex items-center justify-between gap-4 transition-all"
-              >
-                <div className="flex items-center gap-3.5 overflow-hidden">
-                  {/* Platform Indicator */}
-                  <div className="p-2.5 rounded-xl bg-black/40 border border-white/5">
-                    {getPlatformIcon(item.platform)}
-                  </div>
-                  <div>
-                    <h4 className="text-xs sm:text-sm font-bold text-white truncate max-w-[200px] sm:max-w-md">{item.title}</h4>
-                    <div className="flex items-center gap-3 text-[10px] text-dark-muted mt-1">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        <span>{item.day} (Junho)</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{item.time}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 flex-shrink-0">
-                  {getStatusBadge(item.status)}
-                  <button
-                    onClick={() => handleDeleteScheduledItem(item.id)}
-                    className="p-1.5 rounded-lg border border-white/5 bg-white/5 text-rose-400 hover:text-white hover:bg-rose-600 transition-all"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
+          ))}
         </div>
-      </div>
+      )}
+
+      {!loading && Object.keys(groups).length > 0 && (
+        <div className="space-y-6">
+          <h2 className="text-sm font-bold text-dark-text">Próximas publicações</h2>
+          {Object.entries(groups).map(([date, datePosts]) => (
+            <div key={date} className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-accent-cyan capitalize">{date}</span>
+                <div className="flex-1 h-px bg-white/5" />
+              </div>
+              {datePosts.map(post => (
+                <PostCard key={post.id} post={post} onDelete={handleDelete} deleting={deleting === post.id} />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && published.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-bold text-dark-text">Publicados recentemente</h2>
+          {published.slice(0, 10).map(post => (
+            <PostCard key={post.id} post={post} onDelete={handleDelete} deleting={deleting === post.id} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
