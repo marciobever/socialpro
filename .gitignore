@@ -49,3 +49,5 @@ socialpro-logo-1024.png
 
 # claude code (agent worktrees / local config)
 .claude/
+
+.vercel
