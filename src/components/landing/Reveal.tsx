@@ -1,71 +1,40 @@
 "use client";
 import React from 'react';
+import { motion, useInView, type TargetAndTransition } from 'framer-motion';
+import { useRef } from 'react';
+import type { ReactNode } from 'react';
+
+type VariantPair = { hidden: TargetAndTransition; visible: TargetAndTransition };
+
+const VARIANTS: Record<string, VariantPair> = {
+  up:    { hidden: { opacity: 0, y: 28, filter: 'blur(5px)' }, visible: { opacity: 1, y: 0, filter: 'blur(0px)' } },
+  down:  { hidden: { opacity: 0, y: -28, filter: 'blur(5px)' }, visible: { opacity: 1, y: 0, filter: 'blur(0px)' } },
+  left:  { hidden: { opacity: 0, x: 28, filter: 'blur(5px)' }, visible: { opacity: 1, x: 0, filter: 'blur(0px)' } },
+  right: { hidden: { opacity: 0, x: -28, filter: 'blur(5px)' }, visible: { opacity: 1, x: 0, filter: 'blur(0px)' } },
+  scale: { hidden: { opacity: 0, scale: 0.92, filter: 'blur(5px)' }, visible: { opacity: 1, scale: 1, filter: 'blur(0px)' } },
+};
 
 interface RevealProps {
-  children: React.ReactNode;
-  /** Delay in ms before the reveal transition starts (used for stagger). */
+  children: ReactNode;
   delay?: number;
   className?: string;
-  /** Direction the content travels in from. */
   from?: 'up' | 'down' | 'left' | 'right' | 'scale';
 }
 
-const OFFSETS: Record<NonNullable<RevealProps['from']>, string> = {
-  up: 'translate-y-8',
-  down: '-translate-y-8',
-  left: 'translate-x-8',
-  right: '-translate-x-8',
-  scale: 'scale-95',
-};
-
-/**
- * Reveals its children with a soft entrance the first time it scrolls
- * into view. Respects prefers-reduced-motion automatically (no observer
- * means it falls back to visible).
- */
-export const Reveal: React.FC<RevealProps> = ({
-  children,
-  delay = 0,
-  className = '',
-  from = 'up',
-}) => {
-  const ref = React.useRef<HTMLDivElement>(null);
-  const [shown, setShown] = React.useState(false);
-
-  React.useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-
-    if (typeof IntersectionObserver === 'undefined') {
-      setShown(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setShown(true);
-            observer.disconnect();
-          }
-        });
-      },
-      { threshold: 0.15, rootMargin: '0px 0px -10% 0px' }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
+export const Reveal: React.FC<RevealProps> = ({ children, delay = 0, className = '', from = 'up' }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-8% 0px' });
+  const { hidden, visible } = VARIANTS[from];
 
   return (
-    <div
+    <motion.div
       ref={ref}
-      style={{ transitionDelay: `${delay}ms` }}
-      className={`transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${
-        shown ? 'opacity-100 translate-y-0 translate-x-0 scale-100' : `opacity-0 ${OFFSETS[from]}`
-      } ${className}`}
+      initial={hidden}
+      animate={isInView ? visible : hidden}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: delay / 1000 }}
+      className={className}
     >
       {children}
-    </div>
+    </motion.div>
   );
 };

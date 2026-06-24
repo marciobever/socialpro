@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { NextIntlClientProvider } from 'next-intl';
@@ -9,10 +9,10 @@ import { Providers } from './providers';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
 
-const inter = Inter({
+const font = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
-  weight: ['400', '500', '600', '700', '800', '900'],
+  variable: '--font-sans',
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
 });
 
@@ -65,11 +65,6 @@ export async function generateMetadata(
       canonical: BASE_URL,
       languages: { 'pt-BR': `${BASE_URL}/pt`, 'en': `${BASE_URL}/en`, 'es': `${BASE_URL}/es` },
     },
-    icons: {
-      icon: '/favicon.ico',
-      shortcut: '/favicon-16x16.png',
-      apple: '/apple-touch-icon.png',
-    },
     manifest: '/site.webmanifest',
     category: 'technology',
   };
@@ -91,7 +86,7 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang={locale} className={`${font.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col bg-dark-bg text-dark-text relative">
         <script
           dangerouslySetInnerHTML={{

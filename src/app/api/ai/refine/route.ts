@@ -15,10 +15,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'OPENAI_API_KEY não configurada.' }, { status: 400 });
     }
 
-    const { content, tone, aiBio } = await request.json();
+    const { content, tone, aiBio, instruction } = await request.json();
     if (!content) {
       return NextResponse.json({ error: 'O conteúdo original é obrigatório.' }, { status: 400 });
     }
+
+    const extraInstruction = typeof instruction === 'string' && instruction.trim()
+      ? `\n\nAJUSTE PRIORITÁRIO SOLICITADO: ${instruction.trim()} (aplique isso acima de tudo, mantendo o sentido).`
+      : '';
 
     const openai = new OpenAI({ apiKey });
 
@@ -38,7 +42,7 @@ REGRAS:
 - Sem saudações, introduções ou explicações.
 - Espaçamento limpo entre linhas (estilo microblogging).
 - Gancho forte nas primeiras duas linhas.
-- Finalize com CTA sutil para comentários ou compartilhamentos.`,
+- Finalize com CTA sutil para comentários ou compartilhamentos.${extraInstruction}`,
         },
         {
           role: 'user',

@@ -59,11 +59,6 @@ export function SoftwareApplicationJsonLd() {
               description: '60 carrosséis/mês com IA',
             },
           ],
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: '4.9',
-            ratingCount: '127',
-          },
           featureList: [
             'Geração de carrosséis com IA',
             'Imagens geradas por IA (gpt-image-2)',

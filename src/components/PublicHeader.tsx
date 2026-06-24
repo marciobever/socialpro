@@ -13,19 +13,19 @@ export function PublicHeader({ showBack, backLabel = 'Voltar', backHref = '/' }:
   const router = useRouter();
 
   return (
-    <header className="w-full px-4 md:px-6 pt-5 pb-2 relative z-50">
+    <header className="sticky top-0 w-full px-6 py-3.5 z-50">
       <div className="mx-auto max-w-7xl">
-        <div className="glass-panel rounded-2xl px-5 py-3.5 flex items-center justify-between shadow-2xl border border-white/5">
+        <div className="glass-panel rounded-2xl px-6 py-3.5 flex items-center justify-between shadow-2xl border border-white/5">
 
-          {/* Logo */}
+          {/* Logo — matches the landing header for consistency */}
           <button onClick={() => router.push('/')} className="flex items-center gap-2.5 group">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan p-[1px] transition-transform duration-300 group-hover:scale-105">
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan p-[1.5px] transition-transform duration-300 group-hover:scale-105">
               <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-dark-bg">
-                <BrainCircuit className="h-4.5 w-4.5 text-accent-cyan group-hover:text-accent-purple transition-colors" />
+                <BrainCircuit className="h-[18px] w-[18px] brain-neon" />
               </div>
-              <div className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan opacity-30 blur-md group-hover:opacity-60 transition-opacity" />
+              <div className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan opacity-40 blur-md group-hover:opacity-70 transition-opacity" />
             </div>
-            <span className="font-display text-base font-bold tracking-tight text-white">
+            <span className="font-display text-xl font-bold tracking-tight text-white">
               Social<span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">Pro</span>
             </span>
           </button>

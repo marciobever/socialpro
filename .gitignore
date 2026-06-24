@@ -46,3 +46,6 @@ next-env.d.ts
 temp-vite/
 generate-logo.mjs
 socialpro-logo-1024.png
+
+# claude code (agent worktrees / local config)
+.claude/
