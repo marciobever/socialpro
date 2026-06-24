@@ -15,6 +15,7 @@ import { Reveal } from '@/components/landing/Reveal';
 import { AnimatedCarouselPreview } from '@/components/landing/AnimatedCarouselPreview';
 import { AnimatedChart } from '@/components/landing/AnimatedChart';
 import { Footer } from '@/components/Footer';
+import { PublicHeader } from '@/components/PublicHeader';
 import { OrganizationJsonLd, SoftwareApplicationJsonLd, WebSiteJsonLd } from '@/components/JsonLd';
 
 // ── Animation constants ───────────────────────────────────────────────────────
@@ -69,7 +70,7 @@ function GlowCard({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={`relative overflow-hidden ${className}`}
-      style={{ background: '#0d0f17', border: '1px solid rgba(255,255,255,0.06)' }}
+      style={{ background: '#181b25', border: '1px solid rgba(255,255,255,0.06)' }}
       whileHover={{ y: hoverY, borderColor: 'rgba(255,255,255,0.14)', boxShadow: '0 32px 60px -16px rgba(0,0,0,0.85)' }}
       transition={spring}
     >
@@ -117,7 +118,6 @@ export default function LandingPage() {
   const [selectedTone, setSelectedTone] = React.useState<'provocativo' | 'autoridade' | 'storyteller' | 'meme'>('provocativo');
   const [userInteracted, setUserInteracted] = React.useState(false);
   const [openFaq, setOpenFaq] = React.useState<number | null>(0);
-  const [annualBilling, setAnnualBilling] = React.useState(false);
 
   React.useEffect(() => {
     if (userInteracted) return;
@@ -156,19 +156,13 @@ export default function LandingPage() {
 
   const plans = [
     {
-      name: 'Starter Creator', price: 0, annualPrice: 0, recommended: false,
-      desc: 'Para explorar a plataforma',
-      features: ['Geração de texto com IA', 'Até 3 slides por carrossel', '1 Brand Kit', 'Preview de redes sociais'],
-      cta: 'Começar Grátis', planId: 'starter',
-    },
-    {
-      name: 'Pro Creator', price: 29, annualPrice: 23, recommended: true,
+      name: 'Pro Creator', priceLabel: 'R$ 29,99', recommended: true,
       desc: 'Para criadores sérios',
       features: ['25 carrosséis/mês com IA', 'Carrosséis de até 8 slides', 'Imagens geradas por IA', 'Tons de voz avançados', 'Banco de Ideias Virais', 'Calendário editorial + Analytics'],
       cta: 'Assinar Pro', planId: 'pro',
     },
     {
-      name: 'Agency Scale', price: 79, annualPrice: 63, recommended: false,
+      name: 'Agency Scale', priceLabel: 'R$ 79,99', recommended: false,
       desc: 'Para agências e equipes',
       features: ['60 carrosséis/mês com IA', 'Tudo do Pro', 'Brand Kits ilimitados', 'Exportação Figma/PDF', 'Análise de concorrentes', 'Gerente de conta dedicado'],
       cta: 'Assinar Agency', planId: 'agency',
@@ -184,54 +178,8 @@ export default function LandingPage() {
       <motion.div style={{ y: orb2Y }} className="fixed top-[38%] right-[-10%] w-[520px] h-[520px] rounded-full bg-accent-cyan/[0.05] blur-[130px] pointer-events-none -z-10" />
       <div className="fixed inset-0 bg-grid-pattern grid-mask pointer-events-none -z-20" />
 
-      {/* ── Header ──────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 w-full px-6 py-3.5">
-        <div className="mx-auto max-w-7xl">
-          <motion.div
-            initial={{ opacity: 0, y: -12, filter: 'blur(4px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            transition={{ duration: 0.38, ease }}
-            className="glass-panel rounded-2xl px-6 py-3.5 flex items-center justify-between shadow-2xl"
-          >
-            <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => router.push('/')}>
-              <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan p-[1.5px] transition-transform duration-300 group-hover:scale-105">
-                <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-dark-bg">
-                  <BrainCircuit className="h-[18px] w-[18px] brain-neon" />
-                </div>
-                <div className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan opacity-40 blur-md group-hover:opacity-70 transition-opacity" />
-              </div>
-              <span className="font-display text-xl font-bold tracking-tight text-white">
-                Social<span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">Pro</span>
-              </span>
-            </div>
-
-            <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-dark-muted">
-              {[
-                { label: t('navHowItWorks'), href: '#como-funciona' },
-                { label: t('navFeatures'),   href: '#features' },
-              ].map(item => (
-                <motion.a key={item.href} href={item.href} className="text-dark-muted hover:text-white transition-colors" whileHover={{ color: '#fff' }}>
-                  {item.label}
-                </motion.a>
-              ))}
-              <Link href="/pricing" className="text-dark-muted hover:text-white transition-colors">{t('navPricing')}</Link>
-            </nav>
-
-            <div className="flex items-center gap-3">
-              <Link href="/login" className="text-xs font-semibold text-dark-muted hover:text-white transition-colors hidden sm:block">{t('navSignIn')}</Link>
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={spring}>
-                <Link href="/login" className="relative group overflow-hidden inline-flex items-center gap-1.5 rounded-xl bg-white px-5 py-2 text-xs font-bold text-black border border-white/10">
-                  <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                  <span className="relative z-10 group-hover:text-white transition-colors duration-200 flex items-center gap-1.5">
-                    {t('navGetStarted')}
-                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </Link>
-              </motion.div>
-            </div>
-          </motion.div>
-        </div>
-      </header>
+      {/* ── Header (shared) ──────────────────────────────────────────────── */}
+      <PublicHeader />
 
       {/* ══════════════════════════════════════════════════════════════════ */}
       {/* ── HERO — split layout desktop, stacked mobile ─────────────── */}
@@ -356,7 +304,7 @@ export default function LandingPage() {
             <div className="absolute inset-8 rounded-3xl bg-gradient-to-tr from-accent-purple/10 via-transparent to-accent-cyan/10 blur-3xl -z-10 scale-110" />
 
             {/* Mockup frame */}
-            <div className="relative w-full rounded-2xl border border-white/[0.09] bg-[#0a0b10] p-2 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden">
+            <div className="relative w-full rounded-2xl border border-white/[0.09] bg-[#14161e] p-2 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden">
               {/* Top line glow */}
               <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-accent-purple/60 to-transparent pointer-events-none" />
 
@@ -371,13 +319,13 @@ export default function LandingPage() {
               </div>
 
               {/* App content */}
-              <div className="rounded-[14px] bg-[#080910] border border-white/[0.04] p-3 grid grid-cols-12 gap-3">
+              <div className="rounded-[14px] bg-[#13151d] border border-white/[0.04] p-3 grid grid-cols-12 gap-3">
 
                 {/* Sidebar */}
                 <div className="col-span-3 border-r border-white/[0.04] pr-3 space-y-3 hidden md:flex md:flex-col">
                   <div className="flex items-center gap-1.5 pb-2 border-b border-white/[0.04]">
                     <div className="h-5 w-5 rounded-lg bg-gradient-to-tr from-accent-purple to-accent-cyan p-[1px] flex-shrink-0">
-                      <div className="h-full w-full rounded-[4px] bg-[#080910] flex items-center justify-center">
+                      <div className="h-full w-full rounded-[4px] bg-[#13151d] flex items-center justify-center">
                         <div className="h-1.5 w-1.5 rounded-full bg-accent-purple/80" />
                       </div>
                     </div>
@@ -448,9 +396,9 @@ export default function LandingPage() {
 
                 {/* Phone */}
                 <div className="col-span-12 md:col-span-3 flex justify-center items-center border-l border-white/[0.04] pl-3">
-                  <div className="w-[68px] aspect-[9/19] bg-[#0c0d14] rounded-[14px] border border-white/[0.14] p-1 flex flex-col justify-between shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
+                  <div className="w-[68px] aspect-[9/19] bg-[#16181f] rounded-[14px] border border-white/[0.14] p-1 flex flex-col justify-between shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
                     <div className="h-0.5 w-4 bg-white/25 rounded-full mx-auto mt-0.5" />
-                    <div className="flex-1 my-1 rounded-[7px] bg-[#080910] border border-white/[0.05] overflow-hidden flex flex-col">
+                    <div className="flex-1 my-1 rounded-[7px] bg-[#13151d] border border-white/[0.05] overflow-hidden flex flex-col">
                       <div className="px-1.5 pt-1.5 pb-1 flex items-center gap-1 border-b border-white/[0.05]">
                         <div className="h-2.5 w-2.5 rounded-full bg-gradient-to-tr from-accent-orange to-accent-pink flex-shrink-0" />
                         <span className="text-[4.5px] text-white/60 font-semibold truncate">@marcelo.growth</span>
@@ -552,7 +500,7 @@ export default function LandingPage() {
                   <p className="text-sm text-dark-muted leading-relaxed max-w-lg">{t('card1Desc')}</p>
                 </div>
               </div>
-              <div className="flex-1 min-h-[240px] bg-[#05060a] rounded-2xl border border-white/[0.05] flex items-center justify-center overflow-hidden relative shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <div className="flex-1 min-h-[240px] bg-[#0f1117] rounded-2xl border border-white/[0.05] flex items-center justify-center overflow-hidden relative shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <AnimatedCarouselPreview />
               </div>
             </GlowCard>
@@ -594,7 +542,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Caption preview */}
-                <div className="flex-1 bg-[#05060a] border border-white/[0.05] rounded-2xl p-4 flex flex-col gap-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <div className="flex-1 bg-[#0f1117] border border-white/[0.05] rounded-2xl p-4 flex flex-col gap-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                   <div className="flex justify-between items-center pb-2.5 border-b border-white/[0.05]">
                     <span className="text-[7.5px] font-extrabold uppercase tracking-widest text-accent-cyan flex items-center gap-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-accent-cyan animate-pulse" />
@@ -633,14 +581,14 @@ export default function LandingPage() {
               </div>
 
               <div className="flex-1">
-                <div className="rounded-2xl p-5 flex flex-col gap-5 border border-white/[0.07] h-full shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]" style={{ background: '#090b12' }}>
+                <div className="rounded-2xl p-5 flex flex-col gap-5 border border-white/[0.07] h-full shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]" style={{ background: '#161922' }}>
                   {/* Profile row */}
                   <div className="flex items-center gap-3.5">
                     <div className="relative flex-shrink-0">
                       <div className="h-11 w-11 rounded-full bg-gradient-to-tr from-accent-orange to-accent-pink p-[1.5px]">
-                        <div className="h-full w-full rounded-full bg-[#0c0d14] flex items-center justify-center text-[11px] font-black text-white">MS</div>
+                        <div className="h-full w-full rounded-full bg-[#16181f] flex items-center justify-center text-[11px] font-black text-white">MS</div>
                       </div>
-                      <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-[#090b12] animate-pulse" />
+                      <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-[#161922] animate-pulse" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
@@ -704,7 +652,7 @@ export default function LandingPage() {
 
               <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5">
                 {/* Schedule list */}
-                <div className="lg:col-span-5 flex flex-col gap-3 rounded-2xl border border-white/[0.05] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]" style={{ background: '#05060a' }}>
+                <div className="lg:col-span-5 flex flex-col gap-3 rounded-2xl border border-white/[0.05] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]" style={{ background: '#0f1117' }}>
                   <div>
                     <span className="text-[8.5px] font-bold uppercase text-accent-cyan tracking-widest block">{t('schedLabel')}</span>
                     <h4 className="text-xs font-bold text-white mt-0.5">{t('schedTitle')}</h4>
@@ -736,7 +684,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Chart */}
-                <div className="lg:col-span-7 rounded-2xl border border-white/[0.05] overflow-hidden p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]" style={{ background: '#05060a' }}>
+                <div className="lg:col-span-7 rounded-2xl border border-white/[0.05] overflow-hidden p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]" style={{ background: '#0f1117' }}>
                   <AnimatedChart />
                 </div>
               </div>
@@ -760,131 +708,87 @@ export default function LandingPage() {
             <p className="text-base text-dark-muted max-w-md mx-auto">Cancele ou mude de plano a qualquer momento.</p>
           </Reveal>
 
-          {/* Billing toggle */}
-          <Reveal className="flex items-center justify-center gap-4">
-            <span className={`text-sm font-semibold transition-colors duration-200 ${!annualBilling ? 'text-white' : 'text-dark-muted'}`}>Mensal</span>
-            <button
-              onClick={() => setAnnualBilling(v => !v)}
-              className={`relative h-7 w-12 rounded-full border transition-all duration-300 cursor-pointer ${annualBilling ? 'bg-accent-purple/70 border-accent-purple/40' : 'bg-white/10 border-white/10'}`}
-            >
-              <motion.span
-                animate={{ x: annualBilling ? 22 : 4 }}
-                transition={spring}
-                className="absolute top-[5px] h-[14px] w-[14px] rounded-full bg-white shadow-md block"
-              />
-            </button>
-            <div className="flex items-center gap-2">
-              <span className={`text-sm font-semibold transition-colors duration-200 ${annualBilling ? 'text-white' : 'text-dark-muted'}`}>Anual</span>
-              <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20">-20%</span>
-            </div>
-          </Reveal>
-
           {/* Plan cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-start max-w-5xl mx-auto">
-            {plans.map((plan, i) => {
-              const displayPrice = annualBilling ? plan.annualPrice : plan.price;
-              return (
-                <motion.div
-                  key={plan.planId}
-                  initial={{ opacity: 0, y: 28, filter: 'blur(6px)' }}
-                  whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                  viewport={{ once: true, margin: '-8% 0px' }}
-                  transition={{ duration: 0.4, ease, delay: i * 0.08 }}
-                  className={`relative flex flex-col rounded-3xl p-7 border ${
-                    plan.recommended
-                      ? 'border-accent-purple/35 shadow-[0_0_60px_rgba(139,92,246,0.10),0_24px_64px_-12px_rgba(0,0,0,0.8)] md:scale-[1.03]'
-                      : 'border-white/[0.07] shadow-[0_16px_48px_-12px_rgba(0,0,0,0.6)]'
-                  }`}
-                  style={{ background: plan.recommended ? 'linear-gradient(160deg, #0f0d1a 0%, #0d0f17 100%)' : '#0d0f17' }}
-                  whileHover={{ y: plan.recommended ? -6 : -4, transition: spring }}
-                >
-                  {plan.recommended && (
-                    <>
-                      <div className="absolute top-0 left-12 right-12 h-px bg-gradient-to-r from-transparent via-accent-purple/70 to-transparent" />
-                      <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent-purple/40 to-transparent blur-sm" />
-                    </>
-                  )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6 items-start max-w-3xl mx-auto">
+            {plans.map((plan, i) => (
+              <motion.div
+                key={plan.planId}
+                initial={{ opacity: 0, y: 28, filter: 'blur(6px)' }}
+                whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                viewport={{ once: true, margin: '-8% 0px' }}
+                transition={{ duration: 0.4, ease, delay: i * 0.08 }}
+                className={`relative flex flex-col rounded-3xl p-7 border ${
+                  plan.recommended
+                    ? 'border-accent-purple/35 shadow-[0_0_60px_rgba(139,92,246,0.10),0_24px_64px_-12px_rgba(0,0,0,0.8)] md:scale-[1.03]'
+                    : 'border-white/[0.07] shadow-[0_16px_48px_-12px_rgba(0,0,0,0.6)]'
+                }`}
+                style={{ background: plan.recommended ? 'linear-gradient(160deg, #191527 0%, #181b25 100%)' : '#181b25' }}
+                whileHover={{ y: plan.recommended ? -6 : -4, transition: spring }}
+              >
+                {plan.recommended && (
+                  <>
+                    <div className="absolute top-0 left-12 right-12 h-px bg-gradient-to-r from-transparent via-accent-purple/70 to-transparent" />
+                    <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent-purple/40 to-transparent blur-sm" />
+                  </>
+                )}
 
-                  <div className="space-y-6 flex-1">
-                    {/* Plan header */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="font-display text-base font-bold text-white">{plan.name}</h3>
-                        <p className="text-xs text-dark-muted mt-1 leading-relaxed">{plan.desc}</p>
-                      </div>
-                      {plan.recommended && (
-                        <span className="flex-shrink-0 text-[8px] font-bold uppercase px-2.5 py-1 rounded-full bg-accent-purple/20 border border-accent-purple/35 text-accent-purple tracking-wide">
-                          Recomendado
-                        </span>
-                      )}
+                <div className="space-y-6 flex-1">
+                  {/* Plan header */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-display text-base font-bold text-white">{plan.name}</h3>
+                      <p className="text-xs text-dark-muted mt-1 leading-relaxed">{plan.desc}</p>
                     </div>
-
-                    {/* Price */}
-                    <div className="flex items-end gap-1.5">
-                      {displayPrice > 0 && <span className="text-base font-bold text-dark-muted mb-2">$</span>}
-                      <AnimatePresence mode="wait">
-                        <motion.span
-                          key={`${plan.planId}-${displayPrice}`}
-                          initial={{ opacity: 0, y: -8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 8 }}
-                          transition={{ duration: 0.2, ease }}
-                          className="text-[52px] font-black tracking-tight font-display leading-none text-white"
-                        >
-                          {displayPrice === 0 ? 'Grátis' : displayPrice}
-                        </motion.span>
-                      </AnimatePresence>
-                      {displayPrice > 0 && <span className="text-sm text-dark-muted mb-2">/mês</span>}
-                    </div>
-
-                    {annualBilling && plan.price > 0 && (
-                      <p className="text-[10px] text-dark-muted -mt-4">
-                        Cobrado anualmente —{' '}
-                        <span className="text-emerald-400 font-semibold">economize ${(plan.price - plan.annualPrice) * 12}/ano</span>
-                      </p>
-                    )}
-
-                    <div className="h-px bg-white/[0.06]" />
-
-                    {/* Features */}
-                    <ul className="space-y-3">
-                      {plan.features.map(f => (
-                        <li key={f} className="flex items-start gap-2.5 text-sm text-dark-muted">
-                          <Check className="h-4 w-4 text-accent-cyan flex-shrink-0 mt-0.5" />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* CTA */}
-                  <div className="pt-7 space-y-2.5">
-                    <motion.button
-                      onClick={() => router.push(`/login?plan=${plan.planId}`)}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                      transition={spring}
-                      className={`w-full py-3.5 rounded-xl text-sm font-bold cursor-pointer transition-all ${
-                        plan.recommended
-                          ? 'bg-gradient-to-r from-accent-purple to-accent-cyan text-white shadow-[0_4px_24px_rgba(139,92,246,0.35)] hover:shadow-[0_4px_32px_rgba(139,92,246,0.5)]'
-                          : 'bg-white/[0.06] hover:bg-white/[0.10] border border-white/[0.09] hover:border-white/[0.15] text-white'
-                      }`}
-                    >
-                      {plan.cta}
-                    </motion.button>
-                    {plan.planId === 'starter' && (
-                      <p className="text-center text-[10px] text-dark-muted">Sem cartão de crédito</p>
+                    {plan.recommended && (
+                      <span className="flex-shrink-0 text-[8px] font-bold uppercase px-2.5 py-1 rounded-full bg-accent-purple/20 border border-accent-purple/35 text-accent-purple tracking-wide">
+                        Recomendado
+                      </span>
                     )}
                   </div>
-                </motion.div>
-              );
-            })}
+
+                  {/* Price */}
+                  <div className="flex items-end gap-1.5">
+                    <span className="text-[44px] font-black tracking-tight font-display leading-none text-white">{plan.priceLabel}</span>
+                    <span className="text-sm text-dark-muted mb-2">/mês</span>
+                  </div>
+
+                  <div className="h-px bg-white/[0.06]" />
+
+                  {/* Features */}
+                  <ul className="space-y-3">
+                    {plan.features.map(f => (
+                      <li key={f} className="flex items-start gap-2.5 text-sm text-dark-muted">
+                        <Check className="h-4 w-4 text-accent-cyan flex-shrink-0 mt-0.5" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* CTA */}
+                <div className="pt-7">
+                  <motion.button
+                    onClick={() => router.push(`/login?plan=${plan.planId}`)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={spring}
+                    className={`w-full py-3.5 rounded-xl text-sm font-bold cursor-pointer transition-all ${
+                      plan.recommended
+                        ? 'bg-gradient-to-r from-accent-purple to-accent-cyan text-white shadow-[0_4px_24px_rgba(139,92,246,0.35)] hover:shadow-[0_4px_32px_rgba(139,92,246,0.5)]'
+                        : 'bg-white/[0.06] hover:bg-white/[0.10] border border-white/[0.09] hover:border-white/[0.15] text-white'
+                    }`}
+                  >
+                    {plan.cta}
+                  </motion.button>
+                </div>
+              </motion.div>
+            ))}
           </div>
 
           <Reveal className="text-center pt-2">
             <p className="text-xs text-dark-muted">
               Dúvidas?{' '}
-              <a href="mailto:contato@socialpro.ai" className="text-accent-cyan hover:underline transition-colors">contato@socialpro.ai</a>
+              <a href="mailto:contato@socialproai.com" className="text-accent-cyan hover:underline transition-colors">contato@socialproai.com</a>
             </p>
           </Reveal>
         </div>
@@ -912,7 +816,7 @@ export default function LandingPage() {
               <motion.div key={i} variants={fadeItem}>
                 <div
                   className="border rounded-2xl overflow-hidden transition-colors duration-200 hover:border-white/[0.12]"
-                  style={{ background: '#0d0f17', borderColor: openFaq === i ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.07)' }}
+                  style={{ background: '#181b25', borderColor: openFaq === i ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.07)' }}
                 >
                   <button
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}

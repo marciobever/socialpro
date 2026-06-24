@@ -40,20 +40,14 @@ export function SoftwareApplicationJsonLd() {
           offers: [
             {
               '@type': 'Offer',
-              price: '0',
-              priceCurrency: 'BRL',
-              name: 'Starter',
-            },
-            {
-              '@type': 'Offer',
-              price: '29.90',
+              price: '29.99',
               priceCurrency: 'BRL',
               name: 'Pro',
               description: '25 carrosséis/mês com IA',
             },
             {
               '@type': 'Offer',
-              price: '79.90',
+              price: '79.99',
               priceCurrency: 'BRL',
               name: 'Agency',
               description: '60 carrosséis/mês com IA',
@@ -107,7 +101,7 @@ export function PricingJsonLd() {
           brand: { '@type': 'Brand', name: 'SocialPro AI' },
           offers: {
             '@type': 'Offer',
-            price: '29.90',
+            price: '29.99',
             priceCurrency: 'BRL',
             priceValidUntil: '2027-12-31',
             availability: 'https://schema.org/InStock',

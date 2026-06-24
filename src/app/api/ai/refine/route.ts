@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { hasActivePlan } from '@/lib/subscription';
 
 const TONE_INSTRUCTIONS: Record<string, string> = {
   provocativo: 'Crie ganchos desafiadores, questione ideias tradicionais e estimule o engajamento através de provocações inteligentes.',
@@ -10,6 +13,13 @@ const TONE_INSTRUCTIONS: Record<string, string> = {
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as { id?: string } | undefined)?.id ?? session?.user?.email;
+    if (!userId) return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 });
+    if (!(await hasActivePlan(userId))) {
+      return NextResponse.json({ error: 'subscription_required', reason: 'subscription_required' }, { status: 402 });
+    }
+
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: 'OPENAI_API_KEY não configurada.' }, { status: 400 });

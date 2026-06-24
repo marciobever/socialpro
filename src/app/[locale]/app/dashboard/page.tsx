@@ -158,7 +158,7 @@ function StylePicker({ styleModel, onSelect, disabled }: {
     PHOTO_STYLES_9[0];
 
   return (
-    <div className="rounded-3xl border border-white/[0.07] overflow-hidden flex-shrink-0" style={{ background: '#0d0f17' }}>
+    <div className="rounded-3xl border border-white/[0.07] overflow-hidden flex-shrink-0" style={{ background: '#181b25' }}>
       {/* Header colapsável */}
       <button
         type="button"
@@ -362,7 +362,7 @@ const SlideCard = React.memo(function SlideCard({
             className="w-full h-full object-cover"
           />
         ) : slide.isGeneratingImage ? (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-2" style={{ background: '#0a0b10' }}>
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2" style={{ background: '#14161e' }}>
             <Loader2 className="h-5 w-5 text-accent-purple animate-spin" />
             <span className="text-[9px] text-white/40 font-semibold">Gerando...</span>
           </div>
@@ -451,7 +451,7 @@ function InstructionsPanel({ brandName, hasActivePlan, hasTopic }: {
         </div>
 
         {/* Getting-started checklist */}
-        <div className="rounded-2xl border border-white/[0.07] p-4 space-y-3" style={{ background: '#0a0b10' }}>
+        <div className="rounded-2xl border border-white/[0.07] p-4 space-y-3" style={{ background: '#14161e' }}>
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-white/70 uppercase tracking-[0.12em]">Primeiros passos</span>
             <span className="text-[10px] font-bold text-accent-cyan tabular-nums">{doneCount}/{checklist.length}</span>
@@ -921,7 +921,7 @@ function DashboardPage() {
           <div className="flex flex-col gap-4 min-h-0 lg:overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.06) transparent' }}>
 
             {/* Card 1: Channel selector */}
-            <div className="rounded-3xl border border-white/[0.07] flex-shrink-0 p-3 space-y-2.5" style={{ background: '#0d0f17' }}>
+            <div className="rounded-3xl border border-white/[0.07] flex-shrink-0 p-3 space-y-2.5" style={{ background: '#181b25' }}>
               <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.16em] px-0.5">Canal de publicação</span>
               <div className="flex gap-1 p-1 rounded-2xl bg-black/30 border border-white/[0.04]">
                 {FORMATS.map(f => {
@@ -994,13 +994,13 @@ function DashboardPage() {
 
         {/* ── Slides grid ── */}
         {isCarousel && (slides.length > 0 || isGeneratingCarousel) && (
-          <div className="flex-1 flex flex-col rounded-3xl border border-white/[0.07] overflow-hidden min-h-0" style={{ background: '#0d0f17' }}>
+          <div className="flex-1 flex flex-col rounded-3xl border border-white/[0.07] overflow-hidden min-h-0" style={{ background: '#181b25' }}>
 
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]">
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className="text-sm font-bold text-white flex-shrink-0">{t('slides')}</span>
-                <span className="flex items-center gap-2 text-[11px] text-white/40 px-2.5 py-1 rounded-lg border border-white/[0.06] flex-shrink-0" style={{ background: '#0a0b10' }}>
+                <span className="flex items-center gap-2 text-[11px] text-white/40 px-2.5 py-1 rounded-lg border border-white/[0.06] flex-shrink-0" style={{ background: '#14161e' }}>
                   <span className="font-semibold text-white/60">{slides.length}</span> slides
                   <span className="h-3 w-px bg-white/[0.08]" />
                   {/* Progress dots */}
@@ -1062,7 +1062,7 @@ function DashboardPage() {
                             ? 'border-dashed border-white/[0.10] hover:border-accent-purple/50 hover:bg-accent-purple/[0.04]'
                             : 'border-white/[0.04] hover:border-white/[0.10]'
                         }`}
-                        style={{ background: '#07080c' }}
+                        style={{ background: '#11131b' }}
                         onClick={() => setCarouselSlideCount(slotIdx + 1)}
                         title={`Expandir para ${slotIdx + 1} slides`}
                       >
@@ -1077,7 +1077,7 @@ function DashboardPage() {
                     return (
                       <div key={slotIdx}
                         className="aspect-[4/5] rounded-2xl border border-white/[0.08] overflow-hidden shimmer flex items-center justify-center"
-                        style={{ background: '#0a0b10', animationDelay: `${slotIdx * 80}ms` }}
+                        style={{ background: '#14161e', animationDelay: `${slotIdx * 80}ms` }}
                       >
                         <span className="text-[9px] font-bold text-white/15 tabular-nums">{slotIdx + 1}</span>
                       </div>
@@ -1117,7 +1117,7 @@ function DashboardPage() {
 
             {/* ── 4.4 — Editor contextual do slide selecionado ── */}
             {activeSlide && !isGeneratingCarousel && (
-              <div className="flex-shrink-0 border-t border-white/[0.06] p-4 space-y-2.5" style={{ background: '#0a0b10' }}>
+              <div className="flex-shrink-0 border-t border-white/[0.06] p-4 space-y-2.5" style={{ background: '#14161e' }}>
                 {/* Toolbar */}
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-[11px] font-bold text-white/55">
@@ -1277,7 +1277,7 @@ function DashboardPage() {
             <div className="flex flex-col gap-3 min-h-0">
 
               {/* ── 5.1 Legenda do post — editor premium ── */}
-              <div className="rounded-3xl border border-white/[0.07] overflow-hidden flex-shrink-0" style={{ background: '#0d0f17' }}>
+              <div className="rounded-3xl border border-white/[0.07] overflow-hidden flex-shrink-0" style={{ background: '#181b25' }}>
                 <PanelHeader label="Legenda do post">
                   <span className={`text-[10px] tabular-nums ${content.length > 2200 ? 'text-amber-400' : 'text-white/30'}`}>{content.length} / 2.200</span>
                 </PanelHeader>
@@ -1369,7 +1369,7 @@ function DashboardPage() {
               </div>
 
               {/* ── Preview de post (flex-1) ── */}
-              <div className="flex-1 flex flex-col rounded-3xl border border-white/[0.07] overflow-hidden min-h-0 max-lg:min-h-[420px]" style={{ background: '#0d0f17' }}>
+              <div className="flex-1 flex flex-col rounded-3xl border border-white/[0.07] overflow-hidden min-h-0 max-lg:min-h-[420px]" style={{ background: '#181b25' }}>
                 <PanelHeader label={`Preview — ${platform === 'instagram' ? 'Instagram' : platform === 'x' ? 'X / Twitter' : 'LinkedIn'}`}>
                   <span className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-400 uppercase tracking-wide">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />ao vivo
@@ -1377,7 +1377,7 @@ function DashboardPage() {
                 </PanelHeader>
                 <div className="flex-1 overflow-y-auto p-3 flex items-start justify-center" style={{ scrollbarWidth: 'thin' }}>
                   {/* Mock post card */}
-                  <div className="w-full rounded-2xl border border-white/[0.07] overflow-hidden" style={{ background: '#09090f' }}>
+                  <div className="w-full rounded-2xl border border-white/[0.07] overflow-hidden" style={{ background: '#13151d' }}>
                     {/* Profile header */}
                     <div className="flex items-center gap-2.5 px-3 py-2.5 border-b border-white/[0.05]">
                       {brandKit.avatarUrl ? (
@@ -1421,7 +1421,7 @@ function DashboardPage() {
                               </div>
                             </div>
                           ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center gap-2" style={{ background: '#0a0b10' }}>
+                            <div className="w-full h-full flex flex-col items-center justify-center gap-2" style={{ background: '#14161e' }}>
                               <ImageIcon className="h-6 w-6 text-white/15" />
                               <span className="text-[11px] text-white/25">Gere o carrossel para o preview</span>
                             </div>
@@ -1510,7 +1510,7 @@ function DashboardPage() {
               </div>
 
               {/* ── 5.5 Publicar — painel de ação final ── */}
-              <div className="rounded-3xl border border-white/[0.07] overflow-hidden flex-shrink-0" style={{ background: '#0d0f17' }}>
+              <div className="rounded-3xl border border-white/[0.07] overflow-hidden flex-shrink-0" style={{ background: '#181b25' }}>
                 <PanelHeader icon={<Send className="h-3.5 w-3.5" />} accent="text-accent-cyan" label="Publicar" />
 
                 <div className="p-3 space-y-2.5">

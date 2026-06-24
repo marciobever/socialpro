@@ -23,14 +23,14 @@ const LINKS = {
 
 export function Footer() {
   return (
-    <footer className="w-full border-t border-white/5 bg-[#050609] relative z-10">
+    <footer className="w-full border-t border-white/5 bg-[#0f1117] relative z-10">
       <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
 
         {/* Brand */}
         <div className="md:col-span-1 space-y-4">
           <div className="flex items-center gap-2.5">
             <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan p-[1px]">
-              <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[#050609]">
+              <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[#0f1117]">
                 <BrainCircuit className="h-4.5 w-4.5 text-accent-cyan" />
               </div>
               <div className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan opacity-30 blur-md" />

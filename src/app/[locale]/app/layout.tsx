@@ -1,38 +1,51 @@
 "use client";
 import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 import { TopNav } from '@/components/TopNav';
 import { useAppContext } from '@/context/AppContext';
 
 const DEFAULT_NAMES = ['', 'Seu Nome', 'Meu perfil'];
 
+// Pages under /app that are reachable WITHOUT an active plan.
+const PLAN_EXEMPT = ['/app/onboarding', '/app/account'];
+
+function FullScreenLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-dark-bg">
+      <Loader2 className="h-6 w-6 animate-spin text-accent-purple" />
+    </div>
+  );
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { brandKit, planName } = useAppContext();
+  const { brandKit, planName, subscription, profileLoaded } = useAppContext();
   const pathname = usePathname();
   const router   = useRouter();
 
-  // Redirect new users to onboarding if profile not set
-  // Wait for brandKit to load from DB before redirecting
-  useEffect(() => {
-    const isOnboarding = pathname?.includes('/onboarding');
-    if (isOnboarding) return;
-
-    // Only redirect after context has had time to load from DB
-    // brandKit starts empty, then loads — if still empty after a tick, it's a new user
-    const timer = setTimeout(() => {
-      if (DEFAULT_NAMES.includes(brandKit.brandName)) {
-        router.push('/app/onboarding');
-      }
-    }, 1500); // give DB fetch time to complete
-
-    return () => clearTimeout(timer);
-  }, [brandKit.brandName, pathname, router]);
-
   const isOnboarding = pathname?.includes('/onboarding');
+  const isAccount    = PLAN_EXEMPT.some(p => pathname?.includes(p));
 
-  if (isOnboarding) {
-    return <>{children}</>;
-  }
+  // Both profile and subscription must be loaded before we can decide the gate.
+  const ready = profileLoaded && subscription !== null;
+  const needsOnboarding = DEFAULT_NAMES.includes(brandKit.brandName);
+  const hasActivePlan   = !!subscription && ['active', 'trialing'].includes(subscription.status);
+  const needsPlan       = !isAccount && !needsOnboarding && !hasActivePlan;
+
+  useEffect(() => {
+    if (isOnboarding || !ready) return;
+    // 1) Profile not configured → onboarding wizard (always first).
+    if (needsOnboarding) { router.replace('/app/onboarding'); return; }
+    // 2) Profile ok but no active plan → pricing (paid-only access).
+    if (needsPlan) { router.replace('/pricing'); }
+  }, [isOnboarding, ready, needsOnboarding, needsPlan, router]);
+
+  // Onboarding renders standalone (no nav, no gate).
+  if (isOnboarding) return <>{children}</>;
+
+  // Hold the UI until we know the user is allowed — prevents the dashboard
+  // (menus, panels) from flashing before the wizard / pricing redirect.
+  if (!ready || needsOnboarding || needsPlan) return <FullScreenLoader />;
 
   return (
     <div className="min-h-screen flex flex-col bg-dark-bg text-dark-text overflow-x-hidden">

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Check, Sparkles, HelpCircle } from 'lucide-react';
@@ -14,13 +14,11 @@ const PLAN_NAMES: Record<string, string> = {
 };
 
 const PLAN_CONFIGS = [
-  { id: 'starter', priceMonthly: 0,  priceYearly: 0,  recommended: false, featureKeys: ['f1','f2','f3','f4'] as const },
-  { id: 'pro',     priceMonthly: 29, priceYearly: 22, recommended: true,  featureKeys: ['f1','f2','f3','f4','f5','f6'] as const },
-  { id: 'agency',  priceMonthly: 79, priceYearly: 62, recommended: false, featureKeys: ['f1','f2','f3','f4','f5','f6'] as const },
+  { id: 'pro',    priceLabel: 'R$ 29,99', recommended: true,  featureKeys: ['f1','f2','f3','f4','f5','f6'] as const },
+  { id: 'agency', priceLabel: 'R$ 79,99', recommended: false, featureKeys: ['f1','f2','f3','f4','f5','f6'] as const },
 ];
 
 export default function PricingPage() {
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const router = useRouter();
   const t = useTranslations('pricing');
 
@@ -35,7 +33,7 @@ export default function PricingPage() {
       <div className="absolute inset-0 bg-grid-pattern grid-mask pointer-events-none -z-10" />
 
       <PricingJsonLd />
-      <PublicHeader showBack backLabel={t('back')} backHref="/" />
+      <PublicHeader />
 
       {/* Main */}
       <main className="max-w-6xl w-full mx-auto px-6 py-12 space-y-12 relative z-10 flex-1 flex flex-col justify-center">
@@ -48,33 +46,11 @@ export default function PricingPage() {
             {t('title')}
           </h1>
           <p className="text-sm text-dark-muted max-w-lg mx-auto">{t('subtitle')}</p>
-
-          {/* Billing toggle */}
-          <div className="flex items-center justify-center gap-3 pt-6">
-            <span className={`text-xs font-semibold transition-colors ${billingCycle === 'monthly' ? 'text-white' : 'text-dark-muted'}`}>
-              {t('billingMonthly')}
-            </span>
-            <button
-              onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
-              className="relative w-12 h-6 bg-white/5 border border-white/10 rounded-full p-1 transition-all"
-            >
-              <div className={`w-4 h-4 bg-accent-cyan rounded-full shadow-md transition-all ${billingCycle === 'yearly' ? 'translate-x-6' : 'translate-x-0'}`} />
-            </button>
-            <div className="flex items-center gap-1.5">
-              <span className={`text-xs font-semibold transition-colors ${billingCycle === 'yearly' ? 'text-white' : 'text-dark-muted'}`}>
-                {t('billingYearly')}
-              </span>
-              <span className="text-[9px] font-extrabold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-md uppercase">
-                {t('save20')}
-              </span>
-            </div>
-          </div>
         </div>
 
         {/* Plan Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch max-w-5xl mx-auto w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch max-w-3xl mx-auto w-full">
           {PLAN_CONFIGS.map((plan) => {
-            const price = billingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly;
             const ns = `plans.${plan.id}` as const;
 
             return (
@@ -107,15 +83,9 @@ export default function PricingPage() {
 
                   <div>
                     <div className="flex items-baseline text-white">
-                      <span className="text-sm font-bold">USD$</span>
-                      <span className="text-4xl font-extrabold tracking-tight font-display">{price}</span>
-                      <span className="text-xs text-dark-muted ml-1 font-medium">{t('perMonth')}</span>
+                      <span className="text-4xl font-extrabold tracking-tight font-display">{plan.priceLabel}</span>
+                      <span className="text-xs text-dark-muted ml-1.5 font-medium">{t('perMonth')}</span>
                     </div>
-                    {billingCycle === 'yearly' && price > 0 && (
-                      <p className="text-[9px] text-emerald-400 font-bold mt-1">
-                        {t('billedYearly', { amount: plan.priceMonthly * 12 - plan.priceYearly * 12 })}
-                      </p>
-                    )}
                   </div>
 
                   <hr className="border-white/5" />

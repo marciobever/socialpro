@@ -55,7 +55,7 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
             </div>
             <div className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan opacity-25 blur-md" />
           </div>
-          <span className="font-display text-base font-bold tracking-tight text-white hidden sm:block">
+          <span className="font-display text-xl font-bold tracking-tight text-white hidden sm:block">
             Social<span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">Pro</span>
           </span>
         </button>

@@ -114,12 +114,13 @@ export default function OnboardingPage() {
 
       {/* Logo */}
       <div className="flex items-center gap-2.5 mb-10">
-        <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan p-[1px]">
+        <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan p-[1.5px]">
           <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-dark-bg">
-            <BrainCircuit className="h-5 w-5 text-accent-cyan" />
+            <BrainCircuit className="h-[18px] w-[18px] brain-neon" />
           </div>
+          <div className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan opacity-40 blur-md" />
         </div>
-        <span className="font-display text-lg font-bold text-white">
+        <span className="font-display text-xl font-bold tracking-tight text-white">
           Social<span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">Pro</span>
         </span>
       </div>

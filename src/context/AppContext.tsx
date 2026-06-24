@@ -13,6 +13,7 @@ interface SubscriptionState {
 interface AppContextType {
   subscription: SubscriptionState | null;
   loadSubscription: () => Promise<void>;
+  profileLoaded: boolean;
   brandKit: {
     brandName: string;
     brandHandle: string;
@@ -117,13 +118,15 @@ const defaultBrandKit = {
 
 export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [brandKit, setBrandKitState] = useState(defaultBrandKit);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Load profile from DB on mount
   React.useEffect(() => {
     fetch('/api/profile')
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setBrandKitState(data); })
-      .catch(() => { /* silent — keep defaults */ });
+      .catch(() => { /* silent — keep defaults */ })
+      .finally(() => setProfileLoaded(true));
   }, []);
 
   const setBrandKit = setBrandKitState;
@@ -357,6 +360,16 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic, tone, aiBio: brandKit.aiBio, slideCount: carouselSlideCount, styleDesc: STYLE_PROMPTS[lockedStyle] }),
       });
+
+      // No active plan / quota reached → upgrade modal, NO local fallback.
+      if (response.status === 402) {
+        const errBody = await response.json().catch(() => ({}));
+        setUpgradeReason(errBody?.reason === 'usage_limit_reached' ? 'usage_limit_reached' : 'subscription_required');
+        setUpgradeModalOpen(true);
+        setLastCarouselSource(null);
+        setIsGeneratingCarousel(false);
+        return;
+      }
 
       if (!response.ok) throw new Error('Falha ao gerar o carrossel.');
 
@@ -596,6 +609,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   return (
     <AppContext.Provider value={{
       subscription, loadSubscription,
+      profileLoaded,
     brandKit, setBrandKit,
       planName, setPlanName: handleLoginSuccess,
       styleModel, setStyleModel,

@@ -12,7 +12,7 @@ export default function Image() {
         style={{
           width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
-          background: 'linear-gradient(135deg, #07080c 0%, #0d0f1a 50%, #07080c 100%)',
+          background: 'linear-gradient(135deg, #11131b 0%, #0d0f1a 50%, #11131b 100%)',
           fontFamily: 'sans-serif', position: 'relative', overflow: 'hidden',
         }}
       >

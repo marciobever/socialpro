@@ -1,23 +1,26 @@
 "use client";
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import { BrainCircuit, ArrowLeft } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import { BrainCircuit, ArrowRight } from 'lucide-react';
+import { Link, useRouter } from '@/i18n/navigation';
 
-interface PublicHeaderProps {
-  showBack?: boolean;
-  backLabel?: string;
-  backHref?: string;
-}
+const spring = { type: 'spring' as const, stiffness: 380, damping: 28 };
 
-export function PublicHeader({ showBack, backLabel = 'Voltar', backHref = '/' }: PublicHeaderProps) {
+/**
+ * Single canonical marketing header — used on the landing, pricing and login
+ * pages so the public site has one consistent top bar.
+ */
+export function PublicHeader() {
   const router = useRouter();
+  const t = useTranslations('landing');
 
   return (
-    <header className="sticky top-0 w-full px-6 py-3.5 z-50">
+    <header className="sticky top-0 z-50 w-full px-6 py-3.5">
       <div className="mx-auto max-w-7xl">
-        <div className="glass-panel rounded-2xl px-6 py-3.5 flex items-center justify-between shadow-2xl border border-white/5">
+        <div className="glass-panel rounded-2xl px-6 py-3.5 flex items-center justify-between shadow-2xl">
 
-          {/* Logo — matches the landing header for consistency */}
+          {/* Logo */}
           <button onClick={() => router.push('/')} className="flex items-center gap-2.5 group">
             <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan p-[1.5px] transition-transform duration-300 group-hover:scale-105">
               <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-dark-bg">
@@ -30,33 +33,28 @@ export function PublicHeader({ showBack, backLabel = 'Voltar', backHref = '/' }:
             </span>
           </button>
 
-          {/* Nav links */}
-          <nav className="hidden md:flex items-center gap-1">
-            {[
-              { label: 'Início',  href: '/'       },
-              { label: 'Preços',  href: '/pricing' },
-              { label: 'Entrar',  href: '/login'   },
-            ].map(({ label, href }) => (
-              <button key={href} onClick={() => router.push(href)}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-dark-muted hover:text-white hover:bg-white/5 transition-all">
-                {label}
-              </button>
-            ))}
+          {/* Nav */}
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-dark-muted">
+            <Link href="/#como-funciona" className="text-dark-muted hover:text-white transition-colors">{t('navHowItWorks')}</Link>
+            <Link href="/#features" className="text-dark-muted hover:text-white transition-colors">{t('navFeatures')}</Link>
+            <Link href="/pricing" className="text-dark-muted hover:text-white transition-colors">{t('navPricing')}</Link>
           </nav>
 
-          {/* Right: back or CTA */}
-          {showBack ? (
-            <button onClick={() => router.push(backHref)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 text-white transition-all">
-              <ArrowLeft className="h-3.5 w-3.5" />
-              {backLabel}
-            </button>
-          ) : (
-            <button onClick={() => router.push('/login')}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan hover:shadow-[0_0_16px_rgba(139,92,246,0.4)] transition-all">
-              Começar grátis
-            </button>
-          )}
+          {/* CTA */}
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="text-xs font-semibold text-dark-muted hover:text-white transition-colors hidden sm:block">
+              {t('navSignIn')}
+            </Link>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={spring}>
+              <Link href="/login" className="relative group overflow-hidden inline-flex items-center gap-1.5 rounded-xl bg-white px-5 py-2 text-xs font-bold text-black border border-white/10">
+                <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                <span className="relative z-10 group-hover:text-white transition-colors duration-200 flex items-center gap-1.5">
+                  {t('navGetStarted')}
+                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            </motion.div>
+          </div>
         </div>
       </div>
     </header>

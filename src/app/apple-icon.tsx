@@ -13,7 +13,7 @@ export default function AppleIcon() {
         background: 'linear-gradient(135deg, #8b5cf6, #06b6d4)',
       }}>
         <div style={{
-          width: 148, height: 148, borderRadius: 32, background: '#07080c',
+          width: 148, height: 148, borderRadius: 32, background: '#11131b',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" strokeWidth="1.5">

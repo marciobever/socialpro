@@ -123,7 +123,7 @@ export const CarouselCard: React.FC<CarouselCardProps> = ({
   const charCount     = carouselTopic.trim().length;
 
   return (
-    <div className="rounded-3xl overflow-hidden border border-white/[0.07] focus-within:border-accent-purple/30 transition-colors w-full" style={{ background: '#0d0f17' }}>
+    <div className="rounded-3xl overflow-hidden border border-white/[0.07] focus-within:border-accent-purple/30 transition-colors w-full" style={{ background: '#181b25' }}>
 
       {/* ── Header: model status ── */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06] bg-white/[0.015] select-none">

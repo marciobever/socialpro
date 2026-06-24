@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { canGenerate } from '@/lib/subscription';
 
 type GeneratedSlide = { title: string; subtitle: string; imagePrompt: string };
 type CarouselResponse = { slides: GeneratedSlide[]; caption?: string };
@@ -81,6 +84,20 @@ function fallbackSlides(topic: string, tone: string, slideCount: number): Genera
 
 export async function POST(request: Request) {
   try {
+    // ── Gate: require an active plan with remaining quota BEFORE generating ──
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as { id?: string } | undefined)?.id ?? session?.user?.email;
+    if (!userId) {
+      return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 });
+    }
+    const gate = await canGenerate(userId);
+    if (!gate.allowed) {
+      return NextResponse.json(
+        { error: gate.reason ?? 'subscription_required', reason: gate.reason, used: gate.used, limit: gate.limit },
+        { status: 402 },
+      );
+    }
+
     const body = await request.json();
     const topic: string = (body?.topic || '').toString().trim();
     const tone: string = (body?.tone || 'autoridade').toString();

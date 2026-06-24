@@ -3,9 +3,10 @@ import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
-import { BrainCircuit, KeyRound, Mail, ArrowRight, Loader2, Sparkles, Check } from 'lucide-react';
+import { KeyRound, Mail, ArrowRight, Loader2, Sparkles, Check } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 import { Footer } from '@/components/Footer';
+import { PublicHeader } from '@/components/PublicHeader';
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -29,13 +30,13 @@ function FacebookIcon({ className }: { className?: string }) {
 const PLAN_INFO: Record<string, { name: string; price: string; color: string; features: string[] }> = {
   pro: {
     name: 'Pro Creator',
-    price: 'USD$29/mês',
+    price: 'R$ 29,99/mês',
     color: 'from-accent-purple to-accent-cyan',
     features: ['25 carrosséis/mês com IA', 'Imagens geradas por IA', 'Publicação no Instagram'],
   },
   agency: {
     name: 'Agency Scale',
-    price: 'USD$79/mês',
+    price: 'R$ 79,99/mês',
     color: 'from-accent-orange to-accent-pink',
     features: ['60 carrosséis/mês com IA', 'Brand Kits ilimitados', 'Gerente de conta dedicado'],
   },
@@ -83,27 +84,8 @@ function LoginForm() {
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-accent-cyan/10 blur-[120px] pointer-events-none" />
       <div className="absolute inset-0 bg-grid-pattern grid-mask pointer-events-none -z-10" />
 
-      {/* Minimal header */}
-      <header className="w-full px-4 md:px-6 pt-5 relative z-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="glass-panel rounded-2xl px-5 py-3.5 flex items-center justify-between border border-white/5">
-            <button onClick={() => router.push('/')} className="flex items-center gap-2.5 group">
-              <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-accent-purple to-accent-cyan p-[1px]">
-                <div className="flex h-full w-full items-center justify-center rounded-[9px] bg-dark-bg">
-                  <BrainCircuit className="h-4 w-4 text-accent-cyan" />
-                </div>
-              </div>
-              <span className="font-display text-sm font-bold text-white">
-                Social<span className="bg-gradient-to-r from-accent-cyan to-accent-purple bg-clip-text text-transparent">Pro</span>
-              </span>
-            </button>
-            <button onClick={() => router.push('/pricing')}
-              className="text-xs text-dark-muted hover:text-white transition-colors font-semibold">
-              Ver planos →
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Shared header */}
+      <PublicHeader />
 
       {/* Main */}
       <main className="flex-1 flex items-center justify-center px-4 py-10">
@@ -133,7 +115,7 @@ function LoginForm() {
           )}
 
           {/* Card */}
-          <div className="glass-panel rounded-3xl p-8 shadow-2xl space-y-6 border border-white/5 bg-[#0d0f17]/80">
+          <div className="glass-panel rounded-3xl p-8 shadow-2xl space-y-6 border border-white/5 bg-[#181b25]/80">
 
             {/* Brand */}
             <div className="text-center space-y-1.5">

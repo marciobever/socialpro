@@ -141,7 +141,7 @@ export default function TermsPage() {
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-accent-purple/6 blur-[100px] pointer-events-none" />
       <div className="absolute inset-0 bg-grid-pattern grid-mask pointer-events-none -z-10" />
 
-      <PublicHeader showBack backLabel="Voltar" backHref="/" />
+      <PublicHeader />
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 md:px-6 py-12 space-y-8">
 
