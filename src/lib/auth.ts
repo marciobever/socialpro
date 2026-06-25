@@ -2,17 +2,7 @@ import { type NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { createHash, timingSafeEqual } from "crypto";
-
-/**
- * Constant-time string comparison. Both inputs are hashed to a fixed-length
- * buffer first, so this is safe against timing attacks and never leaks length.
- */
-function safeEqual(a: string, b: string): boolean {
-  const ah = createHash("sha256").update(a).digest();
-  const bh = createHash("sha256").update(b).digest();
-  return timingSafeEqual(ah, bh);
-}
+import { createClient } from "@supabase/supabase-js";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -30,9 +20,7 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET ?? process.env.META_APP_SECRET ?? "",
     }),
 
-    // Single allow-listed e-mail/password account, configured via env vars.
-    // Used by the Meta/Facebook review team to test the platform. There is no
-    // public sign-up — everyone else authenticates through Google.
+    // Email/password login backed by Supabase Auth.
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -42,20 +30,20 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         const email    = (credentials?.email ?? "").trim().toLowerCase();
         const password = credentials?.password ?? "";
+        if (!email || !password) return null;
 
-        const allowedEmail    = (process.env.TEST_USER_EMAIL ?? "").trim().toLowerCase();
-        const allowedPassword = process.env.TEST_USER_PASSWORD ?? "";
+        const supabase = createClient(
+          process.env.SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        );
 
-        // If the env credentials aren't configured, password login is disabled.
-        if (!email || !password || !allowedEmail || !allowedPassword) return null;
-
-        const valid = safeEqual(email, allowedEmail) && safeEqual(password, allowedPassword);
-        if (!valid) return null;
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error || !data.user) return null;
 
         return {
-          id:    allowedEmail,
-          name:  process.env.TEST_USER_NAME ?? "SocialPro Tester",
-          email: allowedEmail,
+          id:    data.user.id,
+          email: data.user.email ?? email,
+          name:  data.user.user_metadata?.full_name ?? data.user.email ?? email,
         };
       },
     }),
