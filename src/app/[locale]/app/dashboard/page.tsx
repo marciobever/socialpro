@@ -594,6 +594,8 @@ function DashboardPage() {
 
   const isCarousel    = platform === 'instagram';
   const readyToPublish = isCarousel ? slides.some(s => s.imageUrl) : content.trim().length > 0;
+  const publishLabel  = platform === 'linkedin' ? 'Publicar no LinkedIn' : platform === 'x' ? 'Publicar no X' : t('postToInstagram');
+  const publishViewLabel = platform === 'x' ? 'Ver no X' : platform === 'linkedin' ? 'Ver no LinkedIn' : t('viewOnInstagram');
   const activeSlide   = slides[activeSlideIndex];
   const imagesReady   = slides.filter(s => s.imageUrl).length;
   const missingImages = isCarousel ? Math.max(slides.length - imagesReady, 0) : 0;
@@ -1612,9 +1614,7 @@ function DashboardPage() {
                     {publishState === 'publishing' && <><Loader2 className="h-3.5 w-3.5 animate-spin" />{t('publishing')}</>}
                     {publishState === 'success'    && <><Check className="h-3.5 w-3.5" />{t('published')}</>}
                     {publishState === 'error'      && <><X className="h-3.5 w-3.5" />{t('failed')}</>}
-                    {publishState === 'idle'       && <><Send className="h-3.5 w-3.5" />
-                      {platform === 'linkedin' ? 'Publicar no LinkedIn' : platform === 'x' ? 'Publicar no X' : t('postToInstagram')}
-                    </>}
+                    {publishState === 'idle'       && <><Send className="h-3.5 w-3.5" />{publishLabel}</>}
                   </motion.button>
                   {publishState === 'error' && publishError && (
                     <ContextAlert tone="warn">{publishError}</ContextAlert>
@@ -1622,13 +1622,39 @@ function DashboardPage() {
                   {publishState === 'success' && publishPermalink && (
                     <a href={publishPermalink} target="_blank" rel="noopener noreferrer"
                       className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold transition-colors py-1">
-                      <ExternalLink className="h-3 w-3" />
-                      {platform === 'x' ? 'Ver no X' : platform === 'linkedin' ? 'Ver no LinkedIn' : t('viewOnInstagram')}
+                      <ExternalLink className="h-3 w-3" />{publishViewLabel}
                     </a>
                   )}
                 </div>
               </div>
 
+            </div>
+          )}
+
+          {/* ── Publicar — modo texto (LinkedIn / X) ── */}
+          {!isCarousel && (
+            <div className="max-w-2xl mx-auto w-full space-y-2.5 pt-2">
+              {!content.trim() && <ContextAlert tone="info">Escreva ou gere um texto para publicar.</ContextAlert>}
+              {readyToPublish && publishState === 'idle' && <ContextAlert tone="ok">Tudo pronto! Clique para publicar.</ContextAlert>}
+              <motion.button onClick={handlePublish} disabled={publishState === 'publishing' || !readyToPublish}
+                whileHover={readyToPublish ? { scale: 1.01 } : undefined} whileTap={readyToPublish ? { scale: 0.98 } : undefined} transition={spring}
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-[13px] font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
+                  publishState === 'success' ? 'bg-emerald-500 shadow-[0_0_16px_rgba(16,185,129,0.3)]'
+                  : publishState === 'error' ? 'bg-red-500/80'
+                  : 'bg-gradient-to-r from-accent-purple to-accent-cyan shadow-[0_4px_16px_rgba(139,92,246,0.25)] hover:shadow-[0_6px_24px_rgba(139,92,246,0.45)]'
+                }`}>
+                {publishState === 'publishing' && <><Loader2 className="h-4 w-4 animate-spin" />{t('publishing')}</>}
+                {publishState === 'success'    && <><Check className="h-4 w-4" />{t('published')}</>}
+                {publishState === 'error'      && <><X className="h-4 w-4" />{t('failed')}</>}
+                {publishState === 'idle'       && <><Send className="h-4 w-4" />{publishLabel}</>}
+              </motion.button>
+              {publishState === 'error' && publishError && <ContextAlert tone="warn">{publishError}</ContextAlert>}
+              {publishState === 'success' && publishPermalink && (
+                <a href={publishPermalink} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold transition-colors py-1">
+                  <ExternalLink className="h-3 w-3" />{publishViewLabel}
+                </a>
+              )}
             </div>
           )}
 
