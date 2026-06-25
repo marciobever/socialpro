@@ -1099,9 +1099,9 @@ function DashboardPage() {
             </div>
 
             <div className="flex-1 p-4 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-              {/* ── Mosaico 8 slots fixos ── */}
+              {/* ── Mosaico até 16 slots ── */}
               <div className="grid grid-cols-4 gap-2.5">
-                {Array.from({ length: 8 }, (_, slotIdx) => {
+                {Array.from({ length: 16 }, (_, slotIdx) => {
                   const slide      = slides[slotIdx];
                   const isActive   = slotIdx < carouselSlideCount; // dentro do count configurado
                   const isSelected = slotIdx === activeSlideIndex;
