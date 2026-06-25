@@ -3,6 +3,21 @@ import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { createClient } from "@supabase/supabase-js";
+import type { User } from "next-auth";
+
+async function ensureUserExists(user: User) {
+  const userId = user.id ?? user.email;
+  if (!userId) return;
+
+  const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  await supabase
+    .from("subscriptions")
+    .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -55,6 +70,10 @@ export const authOptions: NextAuthOptions = {
   pages: { signIn: "/login" },
 
   callbacks: {
+    async signIn({ user }) {
+      await ensureUserExists(user);
+      return true;
+    },
     async session({ session, token }) {
       if (session.user) {
         (session.user as { id?: string }).id = token.sub ?? token.email ?? undefined;
