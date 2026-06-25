@@ -11,21 +11,18 @@ function getAdminClient() {
   );
 }
 
-// Returns the Supabase Auth UUID for the given email, creating the user if needed.
-async function getOrCreateSupabaseUser(email: string, name?: string | null): Promise<string | null> {
+// Creates the user in Supabase Auth (for dashboard visibility) without blocking login.
+async function syncToSupabaseAuth(email: string, name?: string | null) {
   const admin = getAdminClient();
-
-  // Try to create — fast path for new users
-  const { data: created, error } = await admin.auth.admin.createUser({
+  const { error } = await admin.auth.admin.createUser({
     email,
     email_confirm: true,
     user_metadata: { full_name: name ?? email },
   });
-  if (!error && created.user) return created.user.id;
-
-  // User already exists — find by scanning (Supabase admin has no getUserByEmail)
-  const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });
-  return list?.users?.find((u) => u.email === email)?.id ?? null;
+  // Ignore "already registered" — user already exists, nothing to do.
+  if (error && !error.message.includes("already been registered")) {
+    console.error("[auth] syncToSupabaseAuth error:", error.message);
+  }
 }
 
 export const authOptions: NextAuthOptions = {
@@ -61,10 +58,11 @@ export const authOptions: NextAuthOptions = {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error || !data.user) return null;
 
+        // Return email as id so all tables use email as user_id consistently.
         return {
-          id:    data.user.id,
-          email: data.user.email ?? email,
-          name:  data.user.user_metadata?.full_name ?? data.user.email ?? email,
+          id:    email,
+          email: email,
+          name:  data.user.user_metadata?.full_name ?? email,
         };
       },
     }),
@@ -74,27 +72,29 @@ export const authOptions: NextAuthOptions = {
   pages: { signIn: "/login" },
 
   callbacks: {
-    // On first login, sync the user to Supabase Auth and store the UUID in the token.
     async jwt({ token, user, trigger }) {
-      // `user` is only present on the first sign-in
       if (trigger === "signIn" && user?.email) {
-        const supabaseId = await getOrCreateSupabaseUser(user.email, user.name);
-        if (supabaseId) {
-          token.supabaseId = supabaseId;
-          // Also ensure a subscription row exists for this user
-          await getAdminClient()
-            .from("subscriptions")
-            .upsert({ user_id: supabaseId }, { onConflict: "user_id", ignoreDuplicates: true });
-        }
+        const email = user.email.trim().toLowerCase();
+
+        // Sync to Supabase Auth (fire-and-forget — don't block the login).
+        syncToSupabaseAuth(email, user.name).catch(() => null);
+
+        // Ensure a subscription row exists, keyed by email.
+        await getAdminClient()
+          .from("subscriptions")
+          .upsert({ user_id: email }, { onConflict: "user_id", ignoreDuplicates: true });
+
+        // Store normalized email so session.user.id is always the email.
+        token.normalizedEmail = email;
       }
       return token;
     },
 
     async session({ session, token }) {
       if (session.user) {
-        // Prefer the Supabase UUID; fall back to NextAuth sub for existing sessions
+        // Use email as the canonical user_id — consistent with all API routes.
         (session.user as { id?: string }).id =
-          (token.supabaseId as string | undefined) ?? token.sub ?? token.email ?? undefined;
+          (token.normalizedEmail as string | undefined) ?? token.email ?? undefined;
       }
       return session;
     },
