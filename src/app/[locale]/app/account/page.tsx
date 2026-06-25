@@ -57,13 +57,23 @@ export default function AccountPage() {
   const [refreshing,      setRefreshing]       = useState(false);
   const [portalError,     setPortalError]      = useState('');
 
-  // Social connections
+  // Social connections — Instagram
   const [metaStatus,       setMetaStatus]       = useState<MetaStatus | null>(null);
   const [metaLoading,      setMetaLoading]      = useState(true);
   const [disconnecting,    setDisconnecting]    = useState(false);
   const [metaError,        setMetaError]        = useState('');
   const [showAccountList,  setShowAccountList]  = useState(false);
   const [switchingAccount, setSwitchingAccount] = useState(false);
+
+  // Social connections — LinkedIn
+  const [linkedinStatus,      setLinkedinStatus]      = useState<{ connected: boolean; name: string | null } | null>(null);
+  const [linkedinLoading,     setLinkedinLoading]     = useState(true);
+  const [linkedinDisconnecting, setLinkedinDisconnecting] = useState(false);
+
+  // Social connections — X/Twitter
+  const [twitterStatus,      setTwitterStatus]      = useState<{ connected: boolean; username: string | null } | null>(null);
+  const [twitterLoading,     setTwitterLoading]     = useState(true);
+  const [twitterDisconnecting, setTwitterDisconnecting] = useState(false);
 
   useEffect(() => {
     // Handle OAuth callback params
@@ -79,12 +89,21 @@ export default function AccountPage() {
     }
     if (params.get('meta_connected')) window.history.replaceState({}, '', '/app/account');
 
-    // Load connection status
+    // Load connection status — all platforms in parallel
     fetch('/api/meta/status')
-      .then(r => r.json())
-      .then((d: MetaStatus) => setMetaStatus(d))
+      .then(r => r.json()).then((d: MetaStatus) => setMetaStatus(d))
       .catch(() => setMetaStatus({ connected: false, instagramId: null, instagramName: null, pageName: null }))
       .finally(() => setMetaLoading(false));
+
+    fetch('/api/linkedin/status')
+      .then(r => r.json()).then(d => setLinkedinStatus(d))
+      .catch(() => setLinkedinStatus({ connected: false, name: null }))
+      .finally(() => setLinkedinLoading(false));
+
+    fetch('/api/twitter/status')
+      .then(r => r.json()).then(d => setTwitterStatus(d))
+      .catch(() => setTwitterStatus({ connected: false, username: null }))
+      .finally(() => setTwitterLoading(false));
   }, []);
 
   const handleDisconnect = async () => {
@@ -413,6 +432,75 @@ export default function AccountPage() {
             </a>
           ))}
           <p className="text-[10px] text-dark-muted">Requer conta Business ou Creator vinculada a uma Página do Facebook.</p>
+        </div>
+
+        {/* LinkedIn */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-dark-border/30 border border-dark-border">
+            <div className="flex items-center gap-3">
+              <svg className="h-5 w-5 text-[#0077b5]" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+              </svg>
+              <div>
+                <p className="text-xs font-semibold text-dark-text">LinkedIn</p>
+                <p className="text-[10px] text-dark-muted">
+                  {linkedinLoading ? 'Verificando...' : linkedinStatus?.connected ? linkedinStatus.name ?? 'Conectado' : 'Não conectado'}
+                </p>
+              </div>
+            </div>
+            {linkedinLoading ? <Loader2 className="h-4 w-4 animate-spin text-dark-muted" />
+              : linkedinStatus?.connected
+                ? <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg"><Check className="h-3 w-3" /> Ativo</span>
+                : <span className="text-[10px] text-dark-muted">—</span>}
+          </div>
+          {!linkedinLoading && (linkedinStatus?.connected ? (
+            <button onClick={async () => { setLinkedinDisconnecting(true); await fetch('/api/linkedin/status', { method: 'DELETE' }); setLinkedinStatus({ connected: false, name: null }); setLinkedinDisconnecting(false); }}
+              disabled={linkedinDisconnecting}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold border border-dark-border text-dark-muted hover:text-red-400 hover:border-red-500/30 transition-all disabled:opacity-50">
+              {linkedinDisconnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2Off className="h-3.5 w-3.5" />}
+              Desconectar LinkedIn
+            </button>
+          ) : (
+            <a href="/api/linkedin/connect"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-[#0077b5] hover:bg-[#006097] hover:shadow-[0_0_16px_rgba(0,119,181,0.3)] transition-all">
+              <Link2 className="h-3.5 w-3.5" /> Conectar LinkedIn
+            </a>
+          ))}
+        </div>
+
+        {/* X / Twitter */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-dark-border/30 border border-dark-border">
+            <div className="flex items-center gap-3">
+              <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+              <div>
+                <p className="text-xs font-semibold text-dark-text">X / Twitter</p>
+                <p className="text-[10px] text-dark-muted">
+                  {twitterLoading ? 'Verificando...' : twitterStatus?.connected ? `@${twitterStatus.username}` : 'Não conectado'}
+                </p>
+              </div>
+            </div>
+            {twitterLoading ? <Loader2 className="h-4 w-4 animate-spin text-dark-muted" />
+              : twitterStatus?.connected
+                ? <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg"><Check className="h-3 w-3" /> Ativo</span>
+                : <span className="text-[10px] text-dark-muted">—</span>}
+          </div>
+          {!twitterLoading && (twitterStatus?.connected ? (
+            <button onClick={async () => { setTwitterDisconnecting(true); await fetch('/api/twitter/status', { method: 'DELETE' }); setTwitterStatus({ connected: false, username: null }); setTwitterDisconnecting(false); }}
+              disabled={twitterDisconnecting}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold border border-dark-border text-dark-muted hover:text-red-400 hover:border-red-500/30 transition-all disabled:opacity-50">
+              {twitterDisconnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2Off className="h-3.5 w-3.5" />}
+              Desconectar X
+            </button>
+          ) : (
+            <a href="/api/twitter/connect"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-black border border-white/10 hover:bg-white/5 hover:shadow-[0_0_16px_rgba(255,255,255,0.1)] transition-all">
+              <Link2 className="h-3.5 w-3.5" /> Conectar X / Twitter
+            </a>
+          ))}
+          <p className="text-[10px] text-dark-muted">Requer plano Basic da API do X (twitter.com/i/api-dashboard).</p>
         </div>
       </div>
 

@@ -755,7 +755,6 @@ function DashboardPage() {
       setPublishState('success');
       if (data.permalink) setPublishPermalink(data.permalink);
       toast.success('Publicado no Instagram', 'Seu carrossel já está no ar 🎉');
-      // Reset after 8s
       setTimeout(() => { setPublishState('idle'); setPublishPermalink(''); }, 8000);
     } catch (err) {
       setPublishState('error');
@@ -764,6 +763,59 @@ function DashboardPage() {
       setTimeout(() => setPublishState('idle'), 6000);
     }
   };
+
+  const handlePublishToLinkedIn = async () => {
+    if (publishState === 'publishing') return;
+    setPublishState('publishing');
+    setPublishError('');
+    setPublishPermalink('');
+    try {
+      const res = await fetch('/api/linkedin/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: content }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error ?? 'Erro ao publicar.');
+      setPublishState('success');
+      toast.success('Publicado no LinkedIn', 'Seu post já está no ar 🎉');
+      setTimeout(() => setPublishState('idle'), 8000);
+    } catch (err) {
+      setPublishState('error');
+      setPublishError(err instanceof Error ? err.message : 'Erro desconhecido.');
+      toast.error('Falha ao publicar', err instanceof Error ? err.message : undefined);
+      setTimeout(() => setPublishState('idle'), 6000);
+    }
+  };
+
+  const handlePublishToX = async () => {
+    if (publishState === 'publishing') return;
+    setPublishState('publishing');
+    setPublishError('');
+    setPublishPermalink('');
+    try {
+      const res = await fetch('/api/twitter/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: content }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error ?? 'Erro ao publicar.');
+      setPublishState('success');
+      if (data.permalink) setPublishPermalink(data.permalink);
+      toast.success('Publicado no X', 'Seu tweet já está no ar 🎉');
+      setTimeout(() => { setPublishState('idle'); setPublishPermalink(''); }, 8000);
+    } catch (err) {
+      setPublishState('error');
+      setPublishError(err instanceof Error ? err.message : 'Erro desconhecido.');
+      toast.error('Falha ao publicar', err instanceof Error ? err.message : undefined);
+      setTimeout(() => setPublishState('idle'), 6000);
+    }
+  };
+
+  const handlePublish = platform === 'linkedin' ? handlePublishToLinkedIn
+    : platform === 'x' ? handlePublishToX
+    : handlePublishToInstagram;
 
   const handleRegenerateSlide = (slideId: string, title: string, subtitle: string, imagePrompt: string) => {
     setOutdatedSlideIds(prev => { const next = new Set(prev); next.delete(slideId); return next; });
@@ -1515,19 +1567,22 @@ function DashboardPage() {
 
                 <div className="p-3 space-y-2.5">
                   {/* Prerequisite alerts */}
-                  {slides.length === 0 && (
+                  {isCarousel && slides.length === 0 && (
                     <ContextAlert tone="info">Gere um carrossel para liberar a publicação.</ContextAlert>
                   )}
-                  {slides.length > 0 && missingImages > 0 && (
+                  {isCarousel && slides.length > 0 && missingImages > 0 && (
                     <ContextAlert tone="warn">
                       Faltam imagens em <span className="font-bold">{missingImages}</span> {missingImages === 1 ? 'slide' : 'slides'}. Gere as imagens para habilitar a publicação.
                     </ContextAlert>
                   )}
-                  {slides.length > 0 && missingImages === 0 && readyToPublish && publishState === 'idle' && (
-                    <ContextAlert tone="ok">Tudo pronto! Seu carrossel pode ser publicado ou agendado.</ContextAlert>
+                  {!isCarousel && !content.trim() && (
+                    <ContextAlert tone="info">Escreva ou gere um texto para publicar.</ContextAlert>
+                  )}
+                  {readyToPublish && publishState === 'idle' && (
+                    <ContextAlert tone="ok">Tudo pronto! Clique para publicar{isCarousel ? ' ou agendar' : ''}.</ContextAlert>
                   )}
 
-                  <motion.button onClick={() => setShowSchedule(!showSchedule)} disabled={!readyToPublish}
+                  <motion.button onClick={() => setShowSchedule(!showSchedule)} disabled={!readyToPublish || !isCarousel}
                     whileHover={readyToPublish ? { scale: 1.01 } : undefined} whileTap={readyToPublish ? { scale: 0.98 } : undefined} transition={spring}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl text-[12px] font-semibold border border-white/[0.08] text-white/55 hover:text-accent-cyan hover:border-accent-cyan/30 disabled:opacity-35 disabled:cursor-not-allowed transition-colors cursor-pointer">
                     <Calendar className="h-3.5 w-3.5 text-accent-cyan" />
@@ -1547,7 +1602,7 @@ function DashboardPage() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  <motion.button onClick={handlePublishToInstagram} disabled={publishState === 'publishing' || !readyToPublish}
+                  <motion.button onClick={handlePublish} disabled={publishState === 'publishing' || !readyToPublish}
                     whileHover={readyToPublish ? { scale: 1.01 } : undefined} whileTap={readyToPublish ? { scale: 0.98 } : undefined} transition={spring}
                     className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-[12.5px] font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
                       publishState === 'success' ? 'bg-emerald-500 shadow-[0_0_16px_rgba(16,185,129,0.3)]'
@@ -1557,7 +1612,9 @@ function DashboardPage() {
                     {publishState === 'publishing' && <><Loader2 className="h-3.5 w-3.5 animate-spin" />{t('publishing')}</>}
                     {publishState === 'success'    && <><Check className="h-3.5 w-3.5" />{t('published')}</>}
                     {publishState === 'error'      && <><X className="h-3.5 w-3.5" />{t('failed')}</>}
-                    {publishState === 'idle'       && <><Send className="h-3.5 w-3.5" />{t('postToInstagram')}</>}
+                    {publishState === 'idle'       && <><Send className="h-3.5 w-3.5" />
+                      {platform === 'linkedin' ? 'Publicar no LinkedIn' : platform === 'x' ? 'Publicar no X' : t('postToInstagram')}
+                    </>}
                   </motion.button>
                   {publishState === 'error' && publishError && (
                     <ContextAlert tone="warn">{publishError}</ContextAlert>
@@ -1565,7 +1622,8 @@ function DashboardPage() {
                   {publishState === 'success' && publishPermalink && (
                     <a href={publishPermalink} target="_blank" rel="noopener noreferrer"
                       className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold transition-colors py-1">
-                      <ExternalLink className="h-3 w-3" />{t('viewOnInstagram')}
+                      <ExternalLink className="h-3 w-3" />
+                      {platform === 'x' ? 'Ver no X' : platform === 'linkedin' ? 'Ver no LinkedIn' : t('viewOnInstagram')}
                     </a>
                   )}
                 </div>
