@@ -3,33 +3,39 @@ import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { createClient } from "@supabase/supabase-js";
-import type { User } from "next-auth";
 
-async function ensureUserExists(user: User) {
-  const userId = user.id ?? user.email;
-  if (!userId) return;
-
-  const supabase = createClient(
+function getAdminClient() {
+  return createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
+}
 
-  await supabase
-    .from("subscriptions")
-    .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
+// Returns the Supabase Auth UUID for the given email, creating the user if needed.
+async function getOrCreateSupabaseUser(email: string, name?: string | null): Promise<string | null> {
+  const admin = getAdminClient();
+
+  // Try to create — fast path for new users
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { full_name: name ?? email },
+  });
+  if (!error && created.user) return created.user.id;
+
+  // User already exists — find by scanning (Supabase admin has no getUserByEmail)
+  const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  return list?.users?.find((u) => u.email === email)?.id ?? null;
 }
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // Real OAuth — anyone with a Google account (needs GOOGLE_CLIENT_ID/SECRET).
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     }),
 
-    // Facebook Login. During Meta app review only test users / app admins can
-    // sign in (Meta restriction) — this is the account created for the Facebook
-    // review team. Uses FACEBOOK_CLIENT_ID/SECRET, falling back to META_APP_*.
+    // Facebook Login — during Meta app review only test users/admins can sign in.
     FacebookProvider({
       clientId: process.env.FACEBOOK_CLIENT_ID ?? process.env.META_APP_ID ?? "",
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET ?? process.env.META_APP_SECRET ?? "",
@@ -64,19 +70,31 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
-  // Credentials provider requires JWT sessions.
   session: { strategy: "jwt" },
-
   pages: { signIn: "/login" },
 
   callbacks: {
-    async signIn({ user }) {
-      await ensureUserExists(user);
-      return true;
+    // On first login, sync the user to Supabase Auth and store the UUID in the token.
+    async jwt({ token, user, trigger }) {
+      // `user` is only present on the first sign-in
+      if (trigger === "signIn" && user?.email) {
+        const supabaseId = await getOrCreateSupabaseUser(user.email, user.name);
+        if (supabaseId) {
+          token.supabaseId = supabaseId;
+          // Also ensure a subscription row exists for this user
+          await getAdminClient()
+            .from("subscriptions")
+            .upsert({ user_id: supabaseId }, { onConflict: "user_id", ignoreDuplicates: true });
+        }
+      }
+      return token;
     },
+
     async session({ session, token }) {
       if (session.user) {
-        (session.user as { id?: string }).id = token.sub ?? token.email ?? undefined;
+        // Prefer the Supabase UUID; fall back to NextAuth sub for existing sessions
+        (session.user as { id?: string }).id =
+          (token.supabaseId as string | undefined) ?? token.sub ?? token.email ?? undefined;
       }
       return session;
     },
