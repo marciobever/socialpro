@@ -26,25 +26,7 @@ const FREE_SUB: Subscription = {
   period_end: null,
 };
 
-// The Meta/Facebook review account always has full access (no Stripe needed).
-const TEST_USER_SUB: Omit<Subscription, 'user_id'> = {
-  stripe_customer_id: null,
-  stripe_subscription_id: null,
-  stripe_price_id: null,
-  status: 'active',
-  plan_id: 'pro',
-  carousel_limit: 9999,
-  carousels_used: 0,
-  period_start: null,
-  period_end: null,
-};
-
 export async function getSubscription(userId: string): Promise<Subscription> {
-  const testEmail = (process.env.TEST_USER_EMAIL ?? '').trim().toLowerCase();
-  if (testEmail && userId.trim().toLowerCase() === testEmail) {
-    return { ...TEST_USER_SUB, user_id: userId };
-  }
-
   const { data } = await getSupabase()
     .from('subscriptions')
     .select('*')
