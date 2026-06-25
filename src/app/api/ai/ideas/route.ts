@@ -25,7 +25,7 @@ Cada ideia deve ter:
 - "title": título do carrossel (máximo 8 palavras, em CAPS)
 - "hook": primeiro slide/gancho (1 frase irresistível)
 - "why": por que vai viralizar (1 frase)
-- "slides": número ideal de slides (3-8)
+- "slides": número ideal de slides (3-16)
 - "tone": tom ideal (provocativo/autoridade/storyteller/meme)
 
 Retorne JSON: {"ideas": [{...}, ...]}`,

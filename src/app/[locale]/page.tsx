@@ -158,7 +158,7 @@ export default function LandingPage() {
     {
       name: 'Pro Creator', priceLabel: 'R$ 29,99', recommended: true,
       desc: 'Para criadores sérios',
-      features: ['25 carrosséis/mês com IA', 'Carrosséis de até 8 slides', 'Imagens geradas por IA', 'Tons de voz avançados', 'Banco de Ideias Virais', 'Calendário editorial + Analytics'],
+      features: ['25 carrosséis/mês com IA', 'Carrosséis de até 16 slides', 'Imagens geradas por IA', 'Tons de voz avançados', 'Banco de Ideias Virais', 'Calendário editorial + Analytics'],
       cta: 'Assinar Pro', planId: 'pro',
     },
     {

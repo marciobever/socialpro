@@ -444,7 +444,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         'linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%)',
       ];
       const topic = carouselTopic.trim();
-      const count = Math.min(Math.max(carouselSlideCount, 3), 8);
+      const count = Math.min(Math.max(carouselSlideCount, 3), 16);
       const short = topic.length > 38 ? `${topic.slice(0, 38)}…` : topic;
       const localSlides: Slide[] = [
         { id: `lf1-${Math.random().toString(36).slice(2, 8)}`, title: 'A VERDADE QUE NINGUÉM TE CONTA', subtitle: `Tudo sobre ${short} em ${count} slides. Deslize até o fim. ➡️`, background: colors[0] },

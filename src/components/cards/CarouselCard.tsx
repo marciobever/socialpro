@@ -43,7 +43,7 @@ const TONES: { id: ToneType; label: string; emoji: string; desc: string }[] = [
   { id: 'meme',        label: 'Meme',        emoji: '⚡',  desc: 'Humor e identificação' },
 ];
 
-const SLIDE_COUNTS = [3, 4, 5, 6, 7, 8];
+const SLIDE_COUNTS = [3, 5, 8, 10, 12, 16];
 
 const WATERMARK_OPTIONS: { id: WatermarkType; label: string }[] = [
   { id: 'both',   label: 'Nome + @' },
@@ -323,7 +323,7 @@ export const CarouselCard: React.FC<CarouselCardProps> = ({
             })}
           </div>
           <span className="text-[10px] text-white/30 px-0.5">
-            {carouselSlideCount <= 4 ? 'Carrossel curto e direto ao ponto.' : carouselSlideCount <= 6 ? 'Equilíbrio entre profundidade e retenção.' : 'Conteúdo detalhado, ideal para tutoriais.'}
+            {carouselSlideCount <= 5 ? 'Carrossel curto e direto ao ponto.' : carouselSlideCount <= 10 ? 'Equilíbrio entre profundidade e retenção.' : 'Carrossel longo — ideal para tutoriais e conteúdo rico.'}
           </span>
         </div>
 

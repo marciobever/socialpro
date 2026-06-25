@@ -103,7 +103,7 @@ export async function POST(request: Request) {
     const tone: string = (body?.tone || 'autoridade').toString();
     const aiBio: string = (body?.aiBio || '').toString();
     const styleDesc: string = (body?.styleDesc || 'dark cinematic aesthetic, moody dramatic lighting, premium editorial quality').toString();
-    const slideCount = Math.min(Math.max(parseInt(body?.slideCount, 10) || 5, 3), 8);
+    const slideCount = Math.min(Math.max(parseInt(body?.slideCount, 10) || 5, 3), 16);
 
     if (!topic) {
       return NextResponse.json({ error: 'Informe um tema para gerar o carrossel.' }, { status: 400 });

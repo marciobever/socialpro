@@ -838,7 +838,7 @@ function DashboardPage() {
   };
 
   const handleAddSlide = () => {
-    if (slides.length >= 8) return;
+    if (slides.length >= 16) return;
     const newSlide: Slide = {
       id: Math.random().toString(36).slice(2, 9),
       title: `Slide ${slides.length + 1}`,
@@ -861,7 +861,7 @@ function DashboardPage() {
   };
 
   const handleDuplicateSlide = (index: number) => {
-    if (slides.length >= 8) return;
+    if (slides.length >= 16) return;
     const src = slides[index];
     if (!src) return;
     const copy: Slide = {
@@ -902,7 +902,7 @@ function DashboardPage() {
   const requestDeleteSlide = React.useCallback((i: number) => setConfirmDeleteIndex(i), []);
   const duplicateSlideStable = React.useCallback((i: number) => {
     const cur = slidesRef.current;
-    if (cur.length >= 8) return;
+    if (cur.length >= 16) return;
     const src = cur[i];
     if (!src) return;
     const copy: Slide = { ...src, id: Math.random().toString(36).slice(2, 9), imageUrl: undefined, isGeneratingImage: false };
@@ -1157,7 +1157,7 @@ function DashboardPage() {
                       key={slide.id}
                       slide={slide} index={slotIdx} isActive={isSelected} total={carouselSlideCount}
                       isOutdated={outdatedSlideIds.has(slide.id)}
-                      canDuplicate={slides.length < 8}
+                      canDuplicate={slides.length < 16}
                       onSelect={selectSlide}
                       onDelete={requestDeleteSlide}
                       onDuplicate={duplicateSlideStable}
@@ -1190,7 +1190,7 @@ function DashboardPage() {
                       <ChevronRight className="h-3.5 w-3.5" />
                     </button>
                     <span className="h-4 w-px bg-white/[0.08] mx-0.5" />
-                    <button title="Duplicar slide" disabled={slides.length >= 8}
+                    <button title="Duplicar slide" disabled={slides.length >= 16}
                       onClick={() => handleDuplicateSlide(activeSlideIndex)}
                       className="h-7 w-7 rounded-lg flex items-center justify-center border border-white/[0.08] text-white/45 hover:text-accent-cyan hover:border-accent-cyan/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer">
                       <Copy className="h-3.5 w-3.5" />
