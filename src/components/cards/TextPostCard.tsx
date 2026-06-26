@@ -13,6 +13,7 @@ interface TextPostCardProps {
   isGenerating: boolean;
   onGenerate: () => void;
   onRefine: () => void;
+  hideGenerator?: boolean;
 }
 
 const TONES: { id: ToneType; label: string; emoji: string }[] = [
@@ -36,6 +37,7 @@ export const TextPostCard: React.FC<TextPostCardProps> = ({
   isGenerating,
   onGenerate,
   onRefine,
+  hideGenerator = false,
 }) => {
   const [copied, setCopied] = React.useState(false);
   const limit = LIMITS[platform] ?? 3000;
@@ -66,53 +68,55 @@ export const TextPostCard: React.FC<TextPostCardProps> = ({
         </div>
       </div>
 
-      {/* Generation panel */}
-      <div className="rounded-2xl border border-accent-cyan/20 bg-gradient-to-br from-accent-cyan/[0.07] to-accent-purple/[0.03] p-4 space-y-3">
-        <label className="flex items-center gap-1.5 text-[11px] font-bold text-white">
-          <Wand2 className="h-3.5 w-3.5 text-accent-cyan" />
-          Sobre o que é o post?
-        </label>
+      {!hideGenerator && (
+        /* Generation panel */
+        <div className="rounded-2xl border border-accent-cyan/20 bg-gradient-to-br from-accent-cyan/[0.07] to-accent-purple/[0.03] p-4 space-y-3">
+          <label className="flex items-center gap-1.5 text-[11px] font-bold text-white">
+            <Wand2 className="h-3.5 w-3.5 text-accent-cyan" />
+            Sobre o que é o post?
+          </label>
 
-        <input
-          type="text"
-          value={topic}
-          onChange={(e) => onUpdateTopic(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && canGenerate) onGenerate(); }}
-          disabled={isGenerating}
-          className="interactive-input disabled:opacity-60"
-          placeholder="Ex: por que consistência vence talento na criação de conteúdo"
-        />
+          <input
+            type="text"
+            value={topic}
+            onChange={(e) => onUpdateTopic(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && canGenerate) onGenerate(); }}
+            disabled={isGenerating}
+            className="interactive-input disabled:opacity-60"
+            placeholder="Ex: por que consistência vence talento na criação de conteúdo"
+          />
 
-        <div className="flex flex-wrap gap-1.5">
-          {TONES.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => onUpdateTone(t.id)}
-              disabled={isGenerating}
-              className={`btn-press flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all disabled:opacity-50 ${
-                tone === t.id
-                  ? 'border-accent-cyan bg-accent-cyan/15 text-white'
-                  : 'bg-white/5 border-white/5 text-dark-muted hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <span>{t.emoji}</span>{t.label}
-            </button>
-          ))}
+          <div className="flex flex-wrap gap-1.5">
+            {TONES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => onUpdateTone(t.id)}
+                disabled={isGenerating}
+                className={`btn-press flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all disabled:opacity-50 ${
+                  tone === t.id
+                    ? 'border-accent-cyan bg-accent-cyan/15 text-white'
+                    : 'bg-white/5 border-white/5 text-dark-muted hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <span>{t.emoji}</span>{t.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={onGenerate}
+            disabled={!canGenerate}
+            className="btn-press w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-accent-cyan to-accent-purple shadow-[0_0_18px_rgba(6,182,212,0.35)] hover:shadow-[0_0_26px_rgba(6,182,212,0.55)] transition-all disabled:opacity-50 disabled:shadow-none"
+          >
+            {isGenerating ? (
+              <><Loader2 className="h-4 w-4 animate-spin" />Escrevendo...</>
+            ) : (
+              <><Wand2 className="h-4 w-4" />Gerar post</>
+            )}
+          </button>
         </div>
-
-        <button
-          onClick={onGenerate}
-          disabled={!canGenerate}
-          className="btn-press w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-accent-cyan to-accent-purple shadow-[0_0_18px_rgba(6,182,212,0.35)] hover:shadow-[0_0_26px_rgba(6,182,212,0.55)] transition-all disabled:opacity-50 disabled:shadow-none"
-        >
-          {isGenerating ? (
-            <><Loader2 className="h-4 w-4 animate-spin" />Escrevendo...</>
-          ) : (
-            <><Wand2 className="h-4 w-4" />Gerar post</>
-          )}
-        </button>
-      </div>
+      )}
 
       {/* Editable post */}
       <div className="space-y-2">

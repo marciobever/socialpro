@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import { Loader2 } from 'lucide-react';
 import { TopNav } from '@/components/TopNav';
 import { useAppContext } from '@/context/AppContext';

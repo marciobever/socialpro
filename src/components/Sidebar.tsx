@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { Layers, Calendar, BarChart2, Sparkles, LogOut, CreditCard } from 'lucide-react';
 import { BrainCircuit } from 'lucide-react';
 
@@ -20,6 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const router = useRouter();
   const pathname = usePathname();
+  const tNav = useTranslations('nav');
 
   const handleLogout = () => {
     // Navigate back to public landing page
@@ -27,10 +28,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const navItems = [
-    { href: '/app/dashboard', label: 'Estúdio de Criação', icon: Layers },
-    { href: '/app/calendar', label: 'Calendário Editorial', icon: Calendar },
-    { href: '/app/analytics', label: 'Analytics Pro', icon: BarChart2 },
-    { href: '/app/brand', label: 'Brand Kit', icon: Sparkles },
+    { href: '/app/dashboard', label: tNav('studio'), icon: Layers },
+    { href: '/app/calendar', label: tNav('calendar'), icon: Calendar },
+    { href: '/app/analytics', label: tNav('analytics'), icon: BarChart2 },
+    { href: '/app/brand', label: tNav('brandKit'), icon: Sparkles },
   ];
 
   return (

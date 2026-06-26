@@ -176,11 +176,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [platform, setPlatform] = useState<PlatformType>('instagram');
   const [tone, setTone] = useState<ToneType>('provocativo');
 
-  const [content, setContent] = useState<string>(
-    `🚨 ATENÇÃO STRIPE E GITHUB: Login alterado!\n\nA ajuda oficial informa que o botão de autenticação automática pelo GitHub e Facebook foi desativado por questões de segurança. O acesso agora migrou para e-mail ou Google.\n\nVeja as instruções completas nos slides ao lado ➡️`
-  );
+  const [content, setContent] = useState<string>('');
 
-  const [slides, setSlides] = useState<Slide[]>(INITIAL_SLIDES);
+  const [slides, setSlides] = useState<Slide[]>([]);
   const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [carouselTopic, setCarouselTopic] = useState<string>('');
@@ -204,6 +202,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     feminino:   'elegant feminine aesthetic, rose gold and blush pink tones, soft floral and botanical elements, chic and sophisticated, dreamy light and airy atmosphere, luxe beauty editorial',
     neutro:     'warm neutral earthy palette, beige cream and sand tones, clean modern minimal, natural linen textures, sophisticated and timeless, soft natural light photography',
     retro:      'vintage retro aesthetic, film grain and light leaks, warm sepia and amber tones, 70s and 80s inspired, nostalgic cinematic feel, analog photography with vignette',
+    neon:       'vibrant neon aesthetic, glowing neon lights in pink purple and cyan, high-contrast dark cyberpunk night, electric energy, glassmorphism elements, futuristic cyber-neon glow',
     // ── Avatar / Ilustração infantil ──
     infantil: 'bright cheerful cartoon illustration style, vibrant primary colors, playful rounded shapes, pastel rainbow accents, children book aesthetic, fun bubbly and energetic',
     pixar:    '3D CGI animation style inspired by Pixar and Disney, soft volumetric lighting, expressive rounded facial features, smooth subsurface skin shading, vibrant saturated colors, cinematic 3D render quality, professional character animation, NO photorealism',

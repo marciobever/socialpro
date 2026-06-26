@@ -1,11 +1,10 @@
 export type PlatformType = 'linkedin' | 'x' | 'instagram';
 
 export type ToneType = 'provocativo' | 'autoridade' | 'storyteller' | 'meme';
-
 export type CarouselStyleModel =
   | 'lifestyle' | 'tech' | 'alert' | 'minimalist'
   | 'infantil' | 'feminino' | 'neutro' | 'retro'
-  | 'pixar' | 'anime' | 'aquarela' | 'flat' | 'cartoon';
+  | 'pixar' | 'anime' | 'aquarela' | 'flat' | 'cartoon' | 'neon';
 
 export type WatermarkType = 'both' | 'handle' | 'none';
 

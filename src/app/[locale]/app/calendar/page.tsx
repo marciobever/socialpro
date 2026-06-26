@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { Calendar, Clock, Trash2, Plus, Loader2, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface ScheduledPost {
@@ -14,31 +15,42 @@ interface ScheduledPost {
 }
 
 const STATUS_MAP = {
-  pending:   { label: 'Agendado',  cls: 'bg-accent-purple/10 border-accent-purple/20 text-accent-purple' },
-  published: { label: 'Publicado', cls: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
-  failed:    { label: 'Falhou',    cls: 'bg-red-500/10 border-red-500/20 text-red-400' },
-  canceled:  { label: 'Cancelado', cls: 'bg-white/5 border-white/10 text-dark-muted' },
+  pending:   { labelKey: 'pending',          cls: 'bg-accent-purple/10 border-accent-purple/20 text-accent-purple' },
+  published: { labelKey: 'status_published', cls: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
+  failed:    { labelKey: 'failed',           cls: 'bg-red-500/10 border-red-500/20 text-red-400' },
+  canceled:  { labelKey: 'canceled',         cls: 'bg-white/5 border-white/10 text-dark-muted' },
 };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', {
+function formatDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
 }
 
-function groupByDate(posts: ScheduledPost[]) {
+function groupByDate(posts: ScheduledPost[], locale: string) {
   const groups: Record<string, ScheduledPost[]> = {};
   posts.forEach(p => {
-    const date = new Date(p.scheduled_for).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+    const date = new Date(p.scheduled_for).toLocaleDateString(locale, { weekday: 'long', day: '2-digit', month: 'long' });
     if (!groups[date]) groups[date] = [];
     groups[date].push(p);
   });
   return groups;
 }
 
-function PostCard({ post, onDelete, deleting }: { post: ScheduledPost; onDelete: (id: string) => void; deleting: boolean }) {
-  const status = STATUS_MAP[post.status];
+function PostCard({
+  post,
+  onDelete,
+  deleting,
+  locale
+}: {
+  post: ScheduledPost;
+  onDelete: (id: string) => void;
+  deleting: boolean;
+  locale: string;
+}) {
+  const t = useTranslations('calendar');
+  const status = STATUS_MAP[post.status] ?? STATUS_MAP.canceled;
   return (
     <div className="glass-panel rounded-2xl border border-dark-border p-4 flex items-start gap-4 hover:border-white/10 transition-colors">
       <div className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/20 flex-shrink-0">
@@ -47,11 +59,11 @@ function PostCard({ post, onDelete, deleting }: { post: ScheduledPost; onDelete:
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border tracking-wider ${status.cls}`}>
-            {status.label}
+            {t(status.labelKey)}
           </span>
           <div className="flex items-center gap-1 text-[10px] text-dark-muted">
             <Clock className="h-3 w-3" />
-            {formatDate(post.scheduled_for)}
+            {formatDate(post.scheduled_for, locale)}
           </div>
         </div>
         {post.caption && (
@@ -60,7 +72,7 @@ function PostCard({ post, onDelete, deleting }: { post: ScheduledPost; onDelete:
         {post.status === 'published' && post.published_at && (
           <div className="flex items-center gap-1 text-[10px] text-emerald-400">
             <CheckCircle2 className="h-3 w-3" />
-            Publicado em {formatDate(post.published_at)}
+            {t('publishedAt')} {formatDate(post.published_at, locale)}
           </div>
         )}
         {post.status === 'failed' && post.error_message && (
@@ -82,6 +94,8 @@ function PostCard({ post, onDelete, deleting }: { post: ScheduledPost; onDelete:
 
 export default function CalendarPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('calendar');
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -105,7 +119,7 @@ export default function CalendarPage() {
 
   const pending   = posts.filter(p => p.status === 'pending');
   const published = posts.filter(p => p.status === 'published');
-  const groups    = groupByDate(pending);
+  const groups    = groupByDate(pending, locale);
 
   return (
     <div className="min-h-[calc(100vh-64px)] py-8 px-4 md:px-8 max-w-4xl mx-auto space-y-8 animate-fade-in">
@@ -115,19 +129,19 @@ export default function CalendarPage() {
         <div>
           <h1 className="text-2xl font-bold text-dark-text flex items-center gap-2">
             <Calendar className="h-6 w-6 text-accent-purple" />
-            Calendário Editorial
+            {t('title')}
           </h1>
-          <p className="text-sm text-dark-muted mt-0.5">Posts agendados e histórico de publicações</p>
+          <p className="text-sm text-dark-muted mt-0.5">{t('subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={load} disabled={loading}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dark-border text-xs text-dark-muted hover:text-dark-text hover:bg-white/5 transition-all disabled:opacity-50">
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Atualizar
+            {t('refresh')}
           </button>
           <button onClick={() => router.push('/app/dashboard')}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan hover:shadow-[0_0_12px_rgba(139,92,246,0.4)] transition-all">
-            <Plus className="h-3.5 w-3.5" /> Criar carrossel
+            <Plus className="h-3.5 w-3.5" /> {t('create')}
           </button>
         </div>
       </div>
@@ -143,13 +157,13 @@ export default function CalendarPage() {
           <div className="p-4 rounded-2xl bg-accent-purple/10 border border-accent-purple/20">
             <Calendar className="h-8 w-8 text-accent-purple" />
           </div>
-          <h2 className="text-lg font-bold text-dark-text">Calendário vazio</h2>
+          <h2 className="text-lg font-bold text-dark-text">{t('emptyTitle')}</h2>
           <p className="text-sm text-dark-muted max-w-sm">
-            Gere um carrossel no Estúdio e agende a publicação para uma data específica.
+            {t('emptyDesc')}
           </p>
           <button onClick={() => router.push('/app/dashboard')}
             className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan">
-            Ir para o Estúdio
+            {t('goToStudio')}
           </button>
         </div>
       )}
@@ -157,9 +171,9 @@ export default function CalendarPage() {
       {!loading && posts.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'Agendados',  value: pending.length,   color: 'text-accent-purple' },
-            { label: 'Publicados', value: published.length, color: 'text-emerald-400' },
-            { label: 'Total',      value: posts.length,     color: 'text-white' },
+            { label: t('scheduled'), value: pending.length,   color: 'text-accent-purple' },
+            { label: t('published'), value: published.length, color: 'text-emerald-400' },
+            { label: t('total'),     value: posts.length,     color: 'text-white' },
           ].map(({ label, value, color }) => (
             <div key={label} className="glass-panel rounded-2xl border border-dark-border p-4 text-center">
               <p className={`text-2xl font-black ${color}`}>{value}</p>
@@ -171,7 +185,7 @@ export default function CalendarPage() {
 
       {!loading && Object.keys(groups).length > 0 && (
         <div className="space-y-6">
-          <h2 className="text-sm font-bold text-dark-text">Próximas publicações</h2>
+          <h2 className="text-sm font-bold text-dark-text">{t('upcoming')}</h2>
           {Object.entries(groups).map(([date, datePosts]) => (
             <div key={date} className="space-y-3">
               <div className="flex items-center gap-2">
@@ -179,7 +193,7 @@ export default function CalendarPage() {
                 <div className="flex-1 h-px bg-white/5" />
               </div>
               {datePosts.map(post => (
-                <PostCard key={post.id} post={post} onDelete={handleDelete} deleting={deleting === post.id} />
+                <PostCard key={post.id} post={post} onDelete={handleDelete} deleting={deleting === post.id} locale={locale} />
               ))}
             </div>
           ))}
@@ -188,9 +202,9 @@ export default function CalendarPage() {
 
       {!loading && published.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-sm font-bold text-dark-text">Publicados recentemente</h2>
+          <h2 className="text-sm font-bold text-dark-text">{t('recent')}</h2>
           {published.slice(0, 10).map(post => (
-            <PostCard key={post.id} post={post} onDelete={handleDelete} deleting={deleting === post.id} />
+            <PostCard key={post.id} post={post} onDelete={handleDelete} deleting={deleting === post.id} locale={locale} />
           ))}
         </div>
       )}

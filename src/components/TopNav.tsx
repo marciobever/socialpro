@@ -1,10 +1,11 @@
 "use client";
 import React from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, Calendar, BarChart2, Clock, LogOut, Menu, X, BrainCircuit, UserCircle, User } from 'lucide-react';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const spring = { type: 'spring' as const, stiffness: 400, damping: 30 };
@@ -20,6 +21,7 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
   const router = useRouter();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const tNav = useTranslations('nav');
 
   React.useEffect(() => {
     document.documentElement.removeAttribute('data-theme');
@@ -27,11 +29,11 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
   }, []);
 
   const navItems = [
-    { href: '/app/dashboard', label: 'Estúdio',    icon: Layers },
-    { href: '/app/history',   label: 'Histórico',  icon: Clock },
-    { href: '/app/calendar',  label: 'Calendário', icon: Calendar },
-    { href: '/app/analytics', label: 'Analytics',  icon: BarChart2 },
-    { href: '/app/account',   label: 'Perfil',     icon: User,
+    { href: '/app/dashboard', label: tNav('studio'),    icon: Layers },
+    { href: '/app/history',   label: tNav('history'),   icon: Clock },
+    { href: '/app/calendar',  label: tNav('calendar'),  icon: Calendar },
+    { href: '/app/analytics', label: tNav('analytics'), icon: BarChart2 },
+    { href: '/app/account',   label: tNav('profile'),   icon: User,
       isActive: (p: string) => p.includes('/app/account') || p.includes('/app/brand') },
   ];
 
@@ -100,6 +102,8 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
 
           {/* Divider */}
           <span className="hidden lg:block h-6 w-px bg-white/[0.07]" />
+
+          <LanguageSwitcher />
 
           {/* Profile button */}
           <motion.button

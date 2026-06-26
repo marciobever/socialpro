@@ -89,6 +89,8 @@ export const PhoneMockup: React.FC<PhoneMockupProps> = ({
         return { background: 'linear-gradient(135deg, #7f1d1d 0%, #c2410c 50%, #ca8a04 100%)' };
       case 'infantil':
         return { background: 'linear-gradient(135deg, #ea580c 0%, #eab308 50%, #22c55e 100%)' };
+      case 'neon':
+        return { background: 'linear-gradient(135deg, #180325 0%, #31054a 50%, #00d2ff 100%)' };
       default:
         return { background: 'linear-gradient(135deg, #0b0c10 0%, #171923 100%)' };
     }
@@ -102,6 +104,7 @@ export const PhoneMockup: React.FC<PhoneMockupProps> = ({
     feminino:  'slide-anim-lifestyle',
     neutro:    'slide-anim-minimalist',
     retro:     'slide-anim-lifestyle',
+    neon:      'slide-anim-tech',
     // Avatar / Illustration styles
     infantil:  'slide-anim-minimalist',
     pixar:     'slide-anim-lifestyle',
