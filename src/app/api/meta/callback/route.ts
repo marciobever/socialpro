@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
+import { getRequestOrigin } from "@/lib/origin";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -7,7 +8,7 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get("state");
   const error = searchParams.get("error");
 
-  const baseUrl     = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl     = getRequestOrigin(req);
   const redirectUri = `${baseUrl}/api/meta/callback`;
   const appId       = process.env.META_APP_ID ?? process.env.FACEBOOK_CLIENT_ID;
   const appSecret   = process.env.META_APP_SECRET ?? process.env.FACEBOOK_CLIENT_SECRET;

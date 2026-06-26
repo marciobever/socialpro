@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getRequestOrigin } from "@/lib/origin";
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   const appId   = process.env.META_APP_ID ?? process.env.FACEBOOK_CLIENT_ID;
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = getRequestOrigin(req);
 
   // Use email consistently for social_connections (same as callback)
   const userId = session?.user?.email;
