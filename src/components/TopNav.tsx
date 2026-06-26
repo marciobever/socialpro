@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layers, Calendar, BarChart2, Clock, LogOut, Menu, X, BrainCircuit, User } from 'lucide-react';
+import { Layers, Calendar, BarChart2, Clock, LogOut, Menu, X, BrainCircuit, User, Sun, Moon } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 const ease = [0.16, 1, 0.3, 1] as const;
@@ -34,10 +34,20 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const tNav = useTranslations('nav');
 
+  const [theme, setTheme] = React.useState<'dark' | 'light'>('dark');
+
   React.useEffect(() => {
-    document.documentElement.removeAttribute('data-theme');
-    localStorage.removeItem('sp-theme');
+    const saved = (localStorage.getItem('sp-theme') as 'dark' | 'light') || 'dark';
+    setTheme(saved);
+    document.documentElement.setAttribute('data-theme', saved);
   }, []);
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('sp-theme', next);
+  };
 
   const navItems = [
     { href: '/app/dashboard', label: tNav('studio'),    icon: Layers },
@@ -115,6 +125,15 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
           <span className="hidden lg:block h-6 w-px bg-white/[0.07]" />
 
           <LanguageSwitcher />
+
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            title={theme === 'dark' ? tNav('lightMode') : tNav('darkMode')}
+            className="p-2 rounded-xl text-white/30 hover:text-white hover:bg-white/[0.06] transition-all border border-transparent cursor-pointer flex items-center justify-center"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4 text-accent-cyan" /> : <Moon className="h-4 w-4 text-accent-purple" />}
+          </button>
 
           {/* Profile button */}
           <motion.button
