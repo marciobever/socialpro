@@ -147,7 +147,7 @@ export default function HistoryPage() {
               className="group glass-panel rounded-2xl border border-white/5 bg-white/[0.01] overflow-hidden hover:border-accent-purple/30 hover:-translate-y-0.5 transition-all duration-200"
             >
               {/* Cover / Placeholder */}
-              <div className="relative aspect-square bg-[#090a0f] border-b border-white/5 overflow-hidden">
+              <div className="relative aspect-[4/5] bg-[#090a0f] border-b border-white/5 overflow-hidden">
                 {c.cover_image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img

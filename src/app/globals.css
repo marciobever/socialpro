@@ -393,3 +393,73 @@ select:focus-visible,
 [data-theme="light"] ::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.15);
 }
+
+/* Custom color overrides for light mode hardcoded classes */
+[data-theme="light"] .text-white {
+  color: #111827 !important;
+}
+[data-theme="light"] .text-white\/85,
+[data-theme="light"] .text-white\/80 {
+  color: rgba(17, 24, 39, 0.85) !important;
+}
+[data-theme="light"] .text-white\/60,
+[data-theme="light"] .text-white\/55,
+[data-theme="light"] .text-white\/50 {
+  color: rgba(17, 24, 39, 0.6) !important;
+}
+[data-theme="light"] .text-white\/45,
+[data-theme="light"] .text-white\/40 {
+  color: #576070 !important;
+}
+[data-theme="light"] .text-white\/30,
+[data-theme="light"] .text-white\/25,
+[data-theme="light"] .text-white\/20 {
+  color: rgba(17, 24, 39, 0.45) !important;
+}
+[data-theme="light"] .bg-\[\#181b25\]\/40 {
+  background-color: rgba(255, 255, 255, 0.82) !important;
+}
+[data-theme="light"] .bg-\[\#181b25\]\/30,
+[data-theme="light"] .bg-white\/\[0\.04\] {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+[data-theme="light"] .bg-white\/\[0\.03\] {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+[data-theme="light"] .bg-white\/\[0\.02\] {
+  background-color: rgba(0, 0, 0, 0.015) !important;
+}
+[data-theme="light"] .bg-white\/\[0\.07\] {
+  background-color: rgba(0, 0, 0, 0.07) !important;
+}
+[data-theme="light"] .border-white\/\[0\.08\] {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] .border-white\/\[0\.07\] {
+  border-color: rgba(0, 0, 0, 0.07) !important;
+}
+[data-theme="light"] .border-white\/\[0\.06\] {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+[data-theme="light"] .border-white\/5 {
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+[data-theme="light"] .bg-black\/30 {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Maintain white text for solid contrast elements */
+[data-theme="light"] .bg-gradient-to-r,
+[data-theme="light"] .bg-gradient-to-tr,
+[data-theme="light"] .bg-\[\#0077b5\],
+[data-theme="light"] .bg-black,
+[data-theme="light"] .bg-gradient-to-r *,
+[data-theme="light"] .bg-gradient-to-tr *,
+[data-theme="light"] .bg-\[\#0077b5\] *,
+[data-theme="light"] .bg-black * {
+  color: #ffffff !important;
+}
+
