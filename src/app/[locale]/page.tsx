@@ -69,8 +69,8 @@ function GlowCard({
       onMouseMove={handleMove}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`relative overflow-hidden ${className}`}
-      style={{ background: '#181b25', border: '1px solid rgba(255,255,255,0.06)' }}
+      className={`relative overflow-hidden glass-panel ${className}`}
+      style={{}}
       whileHover={{ y: hoverY, borderColor: 'rgba(255,255,255,0.14)', boxShadow: '0 32px 60px -16px rgba(0,0,0,0.85)' }}
       transition={spring}
     >
@@ -581,7 +581,7 @@ export default function LandingPage() {
               </div>
 
               <div className="flex-1">
-                <div className="rounded-2xl p-5 flex flex-col gap-5 border border-white/[0.07] h-full shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]" style={{ background: '#161922' }}>
+                <div className="glass-panel rounded-2xl p-5 flex flex-col gap-5 border border-white/[0.07] h-full shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                   {/* Profile row */}
                   <div className="flex items-center gap-3.5">
                     <div className="relative flex-shrink-0">
@@ -652,7 +652,7 @@ export default function LandingPage() {
 
               <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5">
                 {/* Schedule list */}
-                <div className="lg:col-span-5 flex flex-col gap-3 rounded-2xl border border-white/[0.05] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]" style={{ background: '#0f1117' }}>
+                <div className="lg:col-span-5 flex flex-col gap-3 rounded-2xl border border-white/[0.05] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] glass-panel">
                   <div>
                     <span className="text-[8.5px] font-bold uppercase text-accent-cyan tracking-widest block">{t('schedLabel')}</span>
                     <h4 className="text-xs font-bold text-white mt-0.5">{t('schedTitle')}</h4>
@@ -661,9 +661,8 @@ export default function LandingPage() {
                     {scheduleItems.map((item, i) => (
                       <motion.div
                         key={i}
-                        className="flex items-center justify-between p-2.5 rounded-xl border cursor-pointer text-[10px]"
-                        style={{ background: '#0a0c14', borderColor: 'rgba(255,255,255,0.05)' }}
-                        whileHover={{ borderColor: 'rgba(255,255,255,0.12)', background: '#0f1220' }}
+                        className="flex items-center justify-between p-2.5 rounded-xl border border-white/[0.05] bg-dark-bg/40 hover:bg-dark-bg/85 transition-colors cursor-pointer text-[10px]"
+                        whileHover={{ borderColor: 'rgba(255,255,255,0.12)' }}
                         transition={{ duration: 0.18 }}
                       >
                         <div className="flex items-center gap-2.5">
@@ -684,7 +683,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Chart */}
-                <div className="lg:col-span-7 rounded-2xl border border-white/[0.05] overflow-hidden p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]" style={{ background: '#0f1117' }}>
+                <div className="lg:col-span-7 rounded-2xl border border-white/[0.05] overflow-hidden p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] glass-panel">
                   <AnimatedChart />
                 </div>
               </div>
@@ -719,10 +718,9 @@ export default function LandingPage() {
                 transition={{ duration: 0.4, ease, delay: i * 0.08 }}
                 className={`relative flex flex-col rounded-3xl p-7 border ${
                   plan.recommended
-                    ? 'border-accent-purple/35 shadow-[0_0_60px_rgba(139,92,246,0.10),0_24px_64px_-12px_rgba(0,0,0,0.8)] md:scale-[1.03]'
-                    : 'border-white/[0.07] shadow-[0_16px_48px_-12px_rgba(0,0,0,0.6)]'
+                    ? 'border-accent-purple/35 shadow-[0_0_60px_rgba(139,92,246,0.10),0_24px_64px_-12px_rgba(0,0,0,0.8)] md:scale-[1.03] recommended-plan-bg'
+                    : 'border-white/[0.07] shadow-[0_16px_48px_-12px_rgba(0,0,0,0.6)] glass-panel'
                 }`}
-                style={{ background: plan.recommended ? 'linear-gradient(160deg, #191527 0%, #181b25 100%)' : '#181b25' }}
                 whileHover={{ y: plan.recommended ? -6 : -4, transition: spring }}
               >
                 {plan.recommended && (
@@ -815,8 +813,11 @@ export default function LandingPage() {
             {faqs.map((faq, i) => (
               <motion.div key={i} variants={fadeItem}>
                 <div
-                  className="border rounded-2xl overflow-hidden transition-colors duration-200 hover:border-white/[0.12]"
-                  style={{ background: '#181b25', borderColor: openFaq === i ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.07)' }}
+                  className={`border rounded-2xl overflow-hidden transition-colors duration-200 hover:border-white/[0.12] ${
+                    openFaq === i
+                      ? 'border-accent-purple/40 bg-dark-panel shadow-[0_0_12px_rgba(139,92,246,0.08)]'
+                      : 'border-white/[0.07] bg-dark-panel/40'
+                  }`}
                 >
                   <button
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
