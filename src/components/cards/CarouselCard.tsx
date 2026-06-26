@@ -86,7 +86,7 @@ export const CarouselCard: React.FC<CarouselCardProps> = ({
   const hasSlides     = slides.length > 0;
 
   return (
-    <div className="rounded-3xl overflow-hidden border border-white/[0.07] focus-within:border-accent-purple/30 transition-colors w-full" style={{ background: '#181b25' }}>
+    <div className="rounded-3xl overflow-hidden border border-dark-border bg-dark-panel focus-within:border-accent-purple/30 transition-colors w-full">
 
       {/* ── Header: model status ── */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06] bg-white/[0.015] select-none">

@@ -274,7 +274,7 @@ export function PublishPanel({
       {isCarousel ? (
         <>
           {/* Legenda do post */}
-          <div className="rounded-3xl border border-white/[0.07] relative flex-shrink-0" style={{ background: '#181b25' }}>
+          <div className="rounded-3xl border border-dark-border bg-dark-panel relative flex-shrink-0">
             <PanelHeader label={t('caption')}>
               <span className={`text-[10px] tabular-nums ${content.length > 2200 ? 'text-amber-400' : 'text-white/30'}`}>{content.length} / 2.200</span>
             </PanelHeader>
@@ -366,7 +366,7 @@ export function PublishPanel({
           </div>
 
           {/* Publicar — Instagram */}
-          <div className="rounded-3xl border border-white/[0.07] overflow-hidden flex-shrink-0" style={{ background: '#181b25' }}>
+          <div className="rounded-3xl border border-dark-border bg-dark-panel overflow-hidden flex-shrink-0">
             <PanelHeader icon={<Send className="h-3.5 w-3.5" />} accent="text-accent-cyan" label={tPublish('title')} />
             <div className="p-3 space-y-2.5">
               {slides.length === 0 && (

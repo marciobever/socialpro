@@ -55,7 +55,7 @@ const SlideCard = React.memo(function SlideCard({
     <div className="relative group">
       <button
         onClick={() => onSelect(index)}
-        className={`relative w-full aspect-[4/5] rounded-2xl overflow-hidden border transition-all duration-200 block cursor-pointer ${
+        className={`relative w-full aspect-[4/5] rounded-2xl overflow-hidden border transition-all duration-200 block cursor-pointer keep-dark ${
           isActive
             ? 'border-accent-purple shadow-[0_0_0_2px_rgba(139,92,246,0.25),0_10px_30px_rgba(139,92,246,0.18)] z-10'
             : 'border-white/[0.08] hover:border-accent-purple/45 hover:shadow-[0_6px_20px_rgba(0,0,0,0.5)]'
@@ -279,14 +279,14 @@ export function CarouselWorkspace({
   };
 
   return (
-    <div className="flex-1 flex flex-col rounded-3xl border border-white/[0.07] overflow-hidden min-h-0" style={{ background: '#181b25' }}>
+    <div className="flex-1 flex flex-col rounded-3xl border border-dark-border bg-dark-panel overflow-hidden min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06] flex-wrap gap-3">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-dark-border flex-wrap gap-3">
         <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
           <span className="text-sm font-bold text-white flex-shrink-0">{t('slides')}</span>
-          <span className="flex items-center gap-2 text-[10.5px] text-white/40 px-2 py-0.5 rounded-lg border border-white/[0.06] flex-shrink-0" style={{ background: '#14161e' }}>
+          <span className="flex items-center gap-2 text-[10.5px] text-white/40 px-2 py-0.5 rounded-lg border border-dark-border flex-shrink-0 bg-white/[0.02]">
             <span className="font-semibold text-white/60">{slides.length}</span> slides
-            <span className="h-3 w-px bg-white/[0.08]" />
+            <span className="h-3 w-px bg-dark-border" />
             <span className="font-bold text-accent-cyan">{imagesReady}/{slides.length}</span> gerados
           </span>
           
@@ -371,12 +371,11 @@ export function CarouselWorkspace({
               const isNext = slotIdx === carouselSlideCount;
               return (
                 <button key={slotIdx}
-                  className={`group aspect-[4/5] rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                  className={`group aspect-[4/5] rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all bg-white/[0.02] border-dark-border cursor-pointer ${
                     isNext
                       ? 'border-dashed border-white/[0.10] hover:border-accent-purple/50 hover:bg-accent-purple/[0.04]'
                       : 'border-white/[0.04] hover:border-white/[0.10]'
                   }`}
-                  style={{ background: '#11131b' }}
                   onClick={() => setCarouselSlideCount(slotIdx + 1)}
                   title={`Expandir para ${slotIdx + 1} slides`}
                 >
@@ -389,8 +388,8 @@ export function CarouselWorkspace({
             if (isGeneratingCarousel && !slide) {
               return (
                 <div key={slotIdx}
-                  className="aspect-[4/5] rounded-2xl border border-white/[0.08] overflow-hidden shimmer flex items-center justify-center"
-                  style={{ background: '#14161e', animationDelay: `${slotIdx * 80}ms` }}
+                  className="aspect-[4/5] rounded-2xl border border-dark-border overflow-hidden bg-white/[0.03] shimmer flex items-center justify-center"
+                  style={{ animationDelay: `${slotIdx * 80}ms` }}
                 >
                   <span className="text-[9px] font-bold text-white/15 tabular-nums">{slotIdx + 1}</span>
                 </div>
@@ -427,7 +426,7 @@ export function CarouselWorkspace({
 
       {/* Editor contextual do slide selecionado */}
       {activeSlide && !isGeneratingCarousel && (
-        <div className="flex-shrink-0 border-t border-white/[0.06] p-4 space-y-2.5" style={{ background: '#14161e' }}>
+        <div className="flex-shrink-0 border-t border-dark-border p-4 space-y-2.5 bg-white/[0.02]">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 text-[11px] font-bold text-white/55">
               <Pencil className="h-3.5 w-3.5 text-accent-purple" />

@@ -225,7 +225,7 @@ export default function LandingPage() {
             <motion.div variants={fadeItem} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={spring}>
                 <Link href="/login" className="btn-press group relative overflow-hidden inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent-purple to-accent-cyan p-[1px] font-bold text-sm shadow-[0_8px_32px_rgba(139,92,246,0.3)]">
-                  <div className="bg-dark-bg group-hover:bg-transparent rounded-[11px] px-7 py-3.5 transition-all duration-300">
+                  <div className="bg-[#11131b] group-hover:bg-transparent rounded-[11px] px-7 py-3.5 transition-all duration-300">
                     <span className="flex items-center gap-2 text-white whitespace-nowrap">
                       {t('heroCta1')}
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -304,7 +304,7 @@ export default function LandingPage() {
             <div className="absolute inset-8 rounded-3xl bg-gradient-to-tr from-accent-purple/10 via-transparent to-accent-cyan/10 blur-3xl -z-10 scale-110" />
 
             {/* Mockup frame */}
-            <div className="relative w-full rounded-2xl border border-white/[0.09] bg-[#14161e] p-2 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden">
+            <div className="relative w-full rounded-2xl border border-white/[0.09] bg-[#14161e] p-2 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden keep-dark">
               {/* Top line glow */}
               <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-accent-purple/60 to-transparent pointer-events-none" />
 
@@ -500,7 +500,7 @@ export default function LandingPage() {
                   <p className="text-sm text-dark-muted leading-relaxed max-w-lg">{t('card1Desc')}</p>
                 </div>
               </div>
-              <div className="flex-1 min-h-[240px] bg-[#0f1117] rounded-2xl border border-white/[0.05] flex items-center justify-center overflow-hidden relative shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <div className="flex-1 min-h-[240px] bg-[#0f1117] rounded-2xl border border-white/[0.05] flex items-center justify-center overflow-hidden relative shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] keep-dark">
                 <AnimatedCarouselPreview />
               </div>
             </GlowCard>
@@ -542,7 +542,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Caption preview */}
-                <div className="flex-1 bg-[#0f1117] border border-white/[0.05] rounded-2xl p-4 flex flex-col gap-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <div className="flex-1 bg-[#0f1117] border border-white/[0.05] rounded-2xl p-4 flex flex-col gap-3 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] keep-dark">
                   <div className="flex justify-between items-center pb-2.5 border-b border-white/[0.05]">
                     <span className="text-[7.5px] font-extrabold uppercase tracking-widest text-accent-cyan flex items-center gap-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-accent-cyan animate-pulse" />
@@ -586,7 +586,7 @@ export default function LandingPage() {
                   <div className="flex items-center gap-3.5">
                     <div className="relative flex-shrink-0">
                       <div className="h-11 w-11 rounded-full bg-gradient-to-tr from-accent-orange to-accent-pink p-[1.5px]">
-                        <div className="h-full w-full rounded-full bg-[#16181f] flex items-center justify-center text-[11px] font-black text-white">MS</div>
+                        <div className="h-full w-full rounded-full bg-[#16181f] flex items-center justify-center text-[11px] font-black text-white keep-dark">MS</div>
                       </div>
                       <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-[#161922] animate-pulse" />
                     </div>
@@ -893,7 +893,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={spring}>
                 <Link href="/login" className="btn-press group relative overflow-hidden inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-purple to-accent-cyan p-[1px] font-bold text-sm shadow-[0_8px_40px_rgba(139,92,246,0.35)]">
-                  <div className="bg-dark-bg group-hover:bg-transparent rounded-[11px] px-8 py-4 transition-all duration-300">
+                  <div className="bg-[#11131b] group-hover:bg-transparent rounded-[11px] px-8 py-4 transition-all duration-300">
                     <span className="flex items-center gap-2 text-white">
                       {t('ctaFinalCta1')}
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

@@ -104,7 +104,7 @@ function StylePicker({ styleModel, onSelect, disabled }: {
     PHOTO_STYLES_9[0];
 
   return (
-    <div className="rounded-3xl border border-white/[0.07] overflow-hidden flex-shrink-0" style={{ background: '#181b25' }}>
+    <div className="rounded-3xl border border-dark-border bg-dark-panel overflow-hidden flex-shrink-0">
       <button
         type="button"
         onClick={() => setOpen(o => !o)}

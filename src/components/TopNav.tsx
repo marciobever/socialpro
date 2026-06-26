@@ -63,8 +63,7 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
 
   return (
     <header
-      className="sticky top-0 z-50 w-full border-b border-white/[0.06] backdrop-blur-xl"
-      style={{ background: 'rgba(7,8,12,0.88)' }}
+      className="sticky top-0 z-50 w-full border-b border-dark-border bg-dark-bg/80 backdrop-blur-xl"
     >
       <div className="flex items-center justify-between px-5 md:px-8 h-[60px] max-w-screen-xl mx-auto">
 
@@ -187,8 +186,7 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25, ease }}
-            className="md:hidden border-t border-white/[0.06] px-5 py-3 space-y-1 overflow-hidden"
-            style={{ background: 'rgba(7,8,12,0.96)' }}
+            className="md:hidden border-t border-dark-border px-5 py-3 space-y-1 overflow-hidden bg-dark-bg/95 backdrop-blur-xl"
           >
             {navItems.map((item) => {
               const Icon = item.icon;

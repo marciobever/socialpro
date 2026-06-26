@@ -115,7 +115,7 @@ export const PhoneMockup: React.FC<PhoneMockupProps> = ({
   };
 
   return (
-    <div className="relative mx-auto max-w-[340px] w-full aspect-[9/19] rounded-[48px] bg-[#0c0d12] p-3.5 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] border border-white/10 group select-none">
+    <div className="relative mx-auto max-w-[340px] w-full aspect-[9/19] rounded-[48px] bg-[#0c0d12] p-3.5 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] border border-white/10 group select-none keep-dark">
       {/* Notch / Dynamic Island */}
       <div className="absolute top-6 left-1/2 -translate-x-1/2 w-28 h-6 bg-black rounded-full z-30 flex items-center justify-center border border-white/5">
         <div className="h-1.5 w-1.5 rounded-full bg-emerald-500/80 mr-2"></div>

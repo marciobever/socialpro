@@ -34,7 +34,7 @@ export function PreviewPanel() {
   const isCarousel = platform === 'instagram';
 
   return (
-    <div className="flex-1 flex flex-col rounded-3xl border border-white/[0.07] overflow-hidden min-h-0 max-lg:min-h-[420px]" style={{ background: '#181b25' }}>
+    <div className="flex-1 flex flex-col rounded-3xl border border-dark-border bg-dark-panel overflow-hidden min-h-0 max-lg:min-h-[420px]">
       <PanelHeader label={`Preview — ${platform === 'instagram' ? 'Instagram' : platform === 'x' ? 'X / Twitter' : 'LinkedIn'}`}>
         <span className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-400 uppercase tracking-wide">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />ao vivo
@@ -42,7 +42,7 @@ export function PreviewPanel() {
       </PanelHeader>
       <div className="flex-1 overflow-y-auto p-3 flex items-start justify-center" style={{ scrollbarWidth: 'thin' }}>
         {/* Mock post card */}
-        <div className="w-full rounded-2xl border border-white/[0.07] overflow-hidden" style={{ background: '#13151d' }}>
+        <div className="w-full rounded-2xl border border-dark-border bg-[#13151d] [data-theme=light]:bg-white overflow-hidden shadow-sm">
           {/* Profile header */}
           <div className="flex items-center gap-2.5 px-3 py-2.5 border-b border-white/[0.05]">
             {brandKit.avatarUrl ? (
