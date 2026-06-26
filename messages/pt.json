@@ -428,5 +428,22 @@
     "notConnected": "Instagram não conectado",
     "profileHeader": "Perfil do Instagram",
     "engagementHeader": "Engajamento & Alcance"
+  },
+  "history": {
+    "title": "Histórico de Carrosséis",
+    "subtitle": "Todos os carrosséis gerados na sua conta.",
+    "refresh": "Atualizar",
+    "emptyTitle": "Nenhum carrossel ainda",
+    "emptyDesc": "Crie seu primeiro carrossel no Estúdio e ele aparecerá aqui.",
+    "goToStudio": "Ir para o Estúdio",
+    "noImage": "Sem imagem",
+    "published": "Publicado",
+    "draft": "Rascunho",
+    "slidesCount": "{count} slides",
+    "delete": "Excluir",
+    "deleteConfirm": "Tem certeza que deseja excluir este carrossel?",
+    "open": "Abrir",
+    "tryAgain": "Tentar novamente",
+    "errorLoading": "Não foi possível carregar o histórico. Tente novamente."
   }
 }

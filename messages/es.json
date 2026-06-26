@@ -428,5 +428,22 @@
     "notConnected": "Instagram no conectado",
     "profileHeader": "Perfil de Instagram",
     "engagementHeader": "Compromiso y Alcance"
+  },
+  "history": {
+    "title": "Historial de Carruseles",
+    "subtitle": "Todos los carruseles generados en tu cuenta.",
+    "refresh": "Actualizar",
+    "emptyTitle": "Ningún carrusel aún",
+    "emptyDesc": "Crea tu primer carrusel en el Estudio y aparecerá aquí.",
+    "goToStudio": "Ir al Estudio",
+    "noImage": "Sin imagen",
+    "published": "Publicado",
+    "draft": "Borrador",
+    "slidesCount": "{count} slides",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar este carrusel?",
+    "open": "Abrir",
+    "tryAgain": "Intentar de nuevo",
+    "errorLoading": "No se pudo cargar el historial. Inténtalo de nuevo."
   }
 }

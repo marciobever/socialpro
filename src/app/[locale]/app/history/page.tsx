@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Clock, ImageIcon, Loader2, RefreshCw, Sparkles, ExternalLink } from 'lucide-react';
+import { useRouter } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
+import { Clock, ImageIcon, Loader2, RefreshCw, Sparkles, ExternalLink, Trash2 } from 'lucide-react';
 
 interface CarouselSummary {
   id: string;
@@ -38,9 +39,11 @@ function formatDate(iso: string) {
 
 export default function HistoryPage() {
   const router = useRouter();
+  const t = useTranslations('history');
   const [carousels, setCarousels] = useState<CarouselSummary[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -51,9 +54,29 @@ export default function HistoryPage() {
       const json = await res.json();
       setCarousels(json.carousels ?? []);
     } catch {
-      setError('Não foi possível carregar o histórico. Tente novamente.');
+      setError(t('errorLoading'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm(t('deleteConfirm'))) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/carousels/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setCarousels(prev => prev.filter(c => c.id !== id));
+      } else {
+        alert('Erro ao excluir o carrossel.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao excluir o carrossel.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -67,17 +90,17 @@ export default function HistoryPage() {
         <div className="space-y-1">
           <h1 className="font-display text-2xl font-bold text-white flex items-center gap-2">
             <Clock className="h-6 w-6 text-accent-purple" />
-            Histórico de Carrosséis
+            {t('title')}
           </h1>
-          <p className="text-sm text-dark-muted">Todos os carrosséis gerados na sua conta.</p>
+          <p className="text-sm text-dark-muted">{t('subtitle')}</p>
         </div>
         <button
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dark-border bg-white/5 hover:bg-white/10 text-xs font-semibold text-dark-muted hover:text-dark-text transition-all disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dark-border bg-white/5 hover:bg-white/10 text-xs font-semibold text-dark-muted hover:text-dark-text transition-all disabled:opacity-50 cursor-pointer"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Atualizar
+          {t('refresh')}
         </button>
       </div>
 
@@ -92,7 +115,7 @@ export default function HistoryPage() {
       {!loading && error && (
         <div className="text-center py-20 space-y-3">
           <p className="text-sm text-accent-pink">{error}</p>
-          <button onClick={load} className="text-xs text-accent-cyan underline">Tentar novamente</button>
+          <button onClick={load} className="text-xs text-accent-cyan underline cursor-pointer">{t('tryAgain')}</button>
         </div>
       )}
 
@@ -102,15 +125,15 @@ export default function HistoryPage() {
           <div className="p-4 rounded-2xl bg-accent-purple/10 border border-accent-purple/20">
             <Sparkles className="h-8 w-8 text-accent-purple" />
           </div>
-          <h2 className="text-lg font-bold text-white">Nenhum carrossel ainda</h2>
+          <h2 className="text-lg font-bold text-white">{t('emptyTitle')}</h2>
           <p className="text-sm text-dark-muted max-w-sm">
-            Crie seu primeiro carrossel no Estúdio e ele aparecerá aqui.
+            {t('emptyDesc')}
           </p>
           <button
             onClick={() => router.push('/app/dashboard')}
-            className="mt-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-accent-purple to-accent-cyan text-sm font-bold text-white"
+            className="mt-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-accent-purple to-accent-cyan text-sm font-bold text-white cursor-pointer"
           >
-            Ir para o Estúdio
+            {t('goToStudio')}
           </button>
         </div>
       )}
@@ -135,7 +158,7 @@ export default function HistoryPage() {
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-dark-muted">
                     <ImageIcon className="h-8 w-8 opacity-30" />
-                    <span className="text-[10px] font-semibold opacity-40">Sem imagem</span>
+                    <span className="text-[10px] font-semibold opacity-40">{t('noImage')}</span>
                   </div>
                 )}
 
@@ -145,12 +168,12 @@ export default function HistoryPage() {
                     ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
                     : 'bg-white/5 border-white/10 text-dark-muted'
                 }`}>
-                  {c.status === 'published' ? 'Publicado' : 'Rascunho'}
+                  {c.status === 'published' ? t('published') : t('draft')}
                 </span>
 
                 {/* Slide count */}
                 <span className="absolute bottom-2 left-2 text-[8px] font-bold bg-black/60 backdrop-blur-sm border border-white/10 px-2 py-0.5 rounded-full text-dark-muted">
-                  {c.slide_count} slides
+                  {t('slidesCount', { count: c.slide_count })}
                 </span>
               </div>
 
@@ -175,14 +198,28 @@ export default function HistoryPage() {
                   </p>
                 )}
 
-                <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
                   <span className="text-[8px] text-dark-muted">{formatDate(c.created_at)}</span>
-                  <button
-                    onClick={() => router.push(`/app/dashboard?load=${c.id}`)}
-                    className="flex items-center gap-1 text-[8px] font-bold text-accent-purple hover:text-accent-cyan transition-colors"
-                  >
-                    Abrir <ExternalLink className="h-2.5 w-2.5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDelete(c.id)}
+                      disabled={deletingId === c.id}
+                      className="flex items-center gap-1 text-[8px] font-bold text-rose-400 hover:text-rose-300 transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      {deletingId === c.id ? (
+                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-2.5 w-2.5" />
+                      )}
+                      {t('delete')}
+                    </button>
+                    <button
+                      onClick={() => router.push(`/app/dashboard?load=${c.id}`)}
+                      className="flex items-center gap-1 text-[8px] font-bold text-accent-purple hover:text-accent-cyan transition-colors cursor-pointer"
+                    >
+                      {t('open')} <ExternalLink className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

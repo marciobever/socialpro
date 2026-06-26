@@ -428,5 +428,22 @@
     "notConnected": "Instagram not connected",
     "profileHeader": "Instagram Profile",
     "engagementHeader": "Engagement & Reach"
+  },
+  "history": {
+    "title": "Carousel History",
+    "subtitle": "All carousels generated in your account.",
+    "refresh": "Refresh",
+    "emptyTitle": "No carousels yet",
+    "emptyDesc": "Create your first carousel in the Studio and it will appear here.",
+    "goToStudio": "Go to Studio",
+    "noImage": "No image",
+    "published": "Published",
+    "draft": "Draft",
+    "slidesCount": "{count} slides",
+    "delete": "Delete",
+    "deleteConfirm": "Are you sure you want to delete this carousel?",
+    "open": "Open",
+    "tryAgain": "Try again",
+    "errorLoading": "Could not load history. Please try again."
   }
 }
