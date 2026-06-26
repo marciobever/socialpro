@@ -2,6 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, Calendar, BarChart2, Clock, LogOut, Menu, X, BrainCircuit, UserCircle, User } from 'lucide-react';
 
@@ -129,7 +130,7 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
 
           {/* Logout */}
           <button
-            onClick={() => router.push('/')}
+            onClick={() => signOut({ callbackUrl: '/' })}
             title="Sair"
             className="p-2 rounded-xl text-white/30 hover:text-rose-400 hover:bg-rose-500/8 transition-all border border-transparent"
           >

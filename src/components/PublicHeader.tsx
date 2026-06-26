@@ -2,8 +2,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { BrainCircuit, ArrowRight } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
+import { BrainCircuit, ArrowRight, LogOut, LayoutDashboard, UserCircle } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 const spring = { type: 'spring' as const, stiffness: 380, damping: 28 };
 
@@ -14,6 +16,8 @@ const spring = { type: 'spring' as const, stiffness: 380, damping: 28 };
 export function PublicHeader() {
   const router = useRouter();
   const t = useTranslations('landing');
+  const { data: session, status } = useSession();
+  const isAuthed = status === 'authenticated' && !!session?.user;
 
   return (
     <header className="sticky top-0 z-50 w-full px-6 py-3.5">
@@ -42,18 +46,49 @@ export function PublicHeader() {
 
           {/* CTA */}
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-xs font-semibold text-dark-muted hover:text-white transition-colors hidden sm:block">
-              {t('navSignIn')}
-            </Link>
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={spring}>
-              <Link href="/login" className="relative group overflow-hidden inline-flex items-center gap-1.5 rounded-xl bg-white px-5 py-2 text-xs font-bold text-black border border-white/10">
-                <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                <span className="relative z-10 group-hover:text-white transition-colors duration-200 flex items-center gap-1.5">
-                  {t('navGetStarted')}
-                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+            <LanguageSwitcher />
+
+            {isAuthed ? (
+              <>
+                {/* Logged-in: go to dashboard + sign out */}
+                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={spring}>
+                  <Link href="/app/dashboard" className="relative group overflow-hidden inline-flex items-center gap-1.5 rounded-xl bg-white px-5 py-2 text-xs font-bold text-black border border-white/10">
+                    <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                    <span className="relative z-10 group-hover:text-white transition-colors duration-200 flex items-center gap-1.5">
+                      <LayoutDashboard className="h-3.5 w-3.5" />
+                      {t('navDashboard')}
+                    </span>
+                  </Link>
+                </motion.div>
+                <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-dark-muted max-w-[160px] truncate" title={session?.user?.email ?? ''}>
+                  <UserCircle className="h-4 w-4 text-accent-purple flex-shrink-0" />
+                  <span className="truncate">{session?.user?.name ?? session?.user?.email}</span>
                 </span>
-              </Link>
-            </motion.div>
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  title={t('navLogout')}
+                  className="p-2 rounded-xl text-dark-muted hover:text-rose-400 hover:bg-rose-500/8 transition-all"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Logged-out: sign in + get started */}
+                <Link href="/login" className="text-xs font-semibold text-dark-muted hover:text-white transition-colors hidden sm:block">
+                  {t('navSignIn')}
+                </Link>
+                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={spring}>
+                  <Link href="/login" className="relative group overflow-hidden inline-flex items-center gap-1.5 rounded-xl bg-white px-5 py-2 text-xs font-bold text-black border border-white/10">
+                    <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-cyan opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                    <span className="relative z-10 group-hover:text-white transition-colors duration-200 flex items-center gap-1.5">
+                      {t('navGetStarted')}
+                      <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </Link>
+                </motion.div>
+              </>
+            )}
           </div>
         </div>
       </div>

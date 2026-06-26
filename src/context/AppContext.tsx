@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import type { PlatformType, ToneType, Slide, EditorialItem, CarouselStyleModel, WatermarkType } from '../types';
 
 interface SubscriptionState {
@@ -117,23 +118,15 @@ const defaultBrandKit = {
 };
 
 export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { data: session, status } = useSession();
+  // Canonical identity for the signed-in user (email, same key used by every API route).
+  const userKey = session?.user?.email ?? null;
+
   const [brandKit, setBrandKitState] = useState(defaultBrandKit);
   const [profileLoaded, setProfileLoaded] = useState(false);
-
-  // Load profile from DB on mount
-  React.useEffect(() => {
-    fetch('/api/profile')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setBrandKitState(data); })
-      .catch(() => { /* silent — keep defaults */ })
-      .finally(() => setProfileLoaded(true));
-  }, []);
-
-  const setBrandKit = setBrandKitState;
-
   const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
 
-  const loadSubscription = async () => {
+  const loadSubscription = useCallback(async () => {
     try {
       const res = await fetch('/api/subscription');
       if (res.ok) {
@@ -141,9 +134,41 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setSubscription(sub);
       }
     } catch { /* silent */ }
-  };
+  }, []);
 
-  React.useEffect(() => { loadSubscription(); }, []);
+  // Re-fetch profile + subscription whenever the signed-in user changes.
+  // The provider stays mounted across client-side navigation, so without this
+  // a previous account's brand kit would leak into the next session and the
+  // onboarding gate (which keys off brandName) would never trigger.
+  React.useEffect(() => {
+    if (status === 'loading') return; // wait until the session is resolved
+
+    // Signed out → wipe any in-memory account data so nothing leaks.
+    if (status === 'unauthenticated' || !userKey) {
+      setBrandKitState(defaultBrandKit);
+      setSubscription(null);
+      setProfileLoaded(false);
+      return;
+    }
+
+    let cancelled = false;
+    // Reset to defaults first so the gate sees a clean slate while loading.
+    setProfileLoaded(false);
+    setBrandKitState(defaultBrandKit);
+    setSubscription(null);
+
+    fetch('/api/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (!cancelled && data) setBrandKitState(data); })
+      .catch(() => { /* silent — keep defaults */ })
+      .finally(() => { if (!cancelled) setProfileLoaded(true); });
+
+    loadSubscription();
+
+    return () => { cancelled = true; };
+  }, [status, userKey, loadSubscription]);
+
+  const setBrandKit = setBrandKitState;
 
   const [planName, setPlanName] = useState<string>('Starter Creator');
   const [styleModel, setStyleModel] = useState<CarouselStyleModel>('lifestyle');
