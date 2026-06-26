@@ -4,11 +4,22 @@ import { useTranslations } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layers, Calendar, BarChart2, Clock, LogOut, Menu, X, BrainCircuit, UserCircle, User } from 'lucide-react';
+import { Layers, Calendar, BarChart2, Clock, LogOut, Menu, X, BrainCircuit, User } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const spring = { type: 'spring' as const, stiffness: 400, damping: 30 };
+
+function InitialsAvatar({ name, className }: { name: string; className?: string }) {
+  const initials = name
+    ? name.trim().split(/\s+/).slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()
+    : '?';
+  return (
+    <div className={`flex items-center justify-center rounded-full bg-gradient-to-tr from-accent-purple to-accent-cyan ${className}`}>
+      <span className="text-white font-bold select-none text-xs">{initials}</span>
+    </div>
+  );
+}
 
 interface TopNavProps {
   brandName: string;
@@ -114,13 +125,11 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
             transition={spring}
             title="Minha conta"
           >
-            {avatarUrl ? (
+          {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatarUrl} alt="Avatar" className="h-8 w-8 rounded-full border border-accent-purple/30 object-cover flex-shrink-0" />
             ) : (
-              <div className="h-8 w-8 rounded-full border border-accent-purple/30 bg-accent-purple/10 flex items-center justify-center flex-shrink-0">
-                <UserCircle className="h-[18px] w-[18px] text-accent-purple" />
-              </div>
+              <InitialsAvatar name={brandName} className="h-8 w-8 border border-accent-purple/30" />
             )}
             <div className="text-left leading-tight hidden lg:block">
               <p className="text-[12.5px] font-semibold text-white group-hover:text-accent-cyan transition-colors truncate max-w-[120px]">
@@ -180,9 +189,14 @@ export const TopNav: React.FC<TopNavProps> = ({ brandName, brandHandle, avatarUr
             {/* Mobile profile + logout */}
             <div className="pt-2 mt-2 border-t border-white/[0.06] flex items-center justify-between">
               <button onClick={() => { setMobileOpen(false); router.push('/app/account'); }}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-white/60 hover:text-white transition-colors">
-                <UserCircle className="h-4 w-4 text-accent-purple" />
-                {brandName || 'Meu perfil'}
+                className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold text-white/60 hover:text-white transition-colors">
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt="Avatar" className="h-6 w-6 rounded-full border border-accent-purple/30 object-cover flex-shrink-0" />
+                ) : (
+                  <InitialsAvatar name={brandName} className="h-6 w-6 border border-accent-purple/30" />
+                )}
+                <span className="truncate max-w-[120px]">{brandName || 'Meu perfil'}</span>
               </button>
               {planName && (
                 <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-full bg-accent-purple/[0.08] border border-accent-purple/20 text-accent-purple tracking-wider">

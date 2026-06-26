@@ -408,5 +408,25 @@
     "statusPastDue": "Vencido",
     "statusCanceled": "Cancelado",
     "statusFree": "Sem plano"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Performance dos seus posts no Instagram",
+    "refresh": "Atualizar",
+    "followers": "Seguidores",
+    "reach30d": "Alcance (30d)",
+    "impressions": "Impressões",
+    "publications": "Publicações",
+    "totalLikes": "Total likes",
+    "comments": "Comentários",
+    "totalReach": "Alcance total",
+    "avgEngagement": "Eng. médio",
+    "recentPosts": "Posts recentes",
+    "noCaption": "Sem legenda",
+    "noPosts": "Nenhum post encontrado. Publique carrosséis para ver as métricas aqui.",
+    "connectIg": "Conectar Instagram →",
+    "notConnected": "Instagram não conectado",
+    "profileHeader": "Perfil do Instagram",
+    "engagementHeader": "Engajamento & Alcance"
   }
 }

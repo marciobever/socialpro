@@ -408,5 +408,25 @@
     "statusPastDue": "Vencido",
     "statusCanceled": "Cancelado",
     "statusFree": "Sin plan"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Rendimiento de tus publicaciones en Instagram",
+    "refresh": "Actualizar",
+    "followers": "Seguidores",
+    "reach30d": "Alcance (30d)",
+    "impressions": "Impresiones",
+    "publications": "Publicaciones",
+    "totalLikes": "Likes totales",
+    "comments": "Comentarios",
+    "totalReach": "Alcance total",
+    "avgEngagement": "Compromiso prom.",
+    "recentPosts": "Posts recientes",
+    "noCaption": "Sin subtítulo",
+    "noPosts": "No se encontraron publicaciones. Publica carruseles para ver métricas aquí.",
+    "connectIg": "Conectar Instagram →",
+    "notConnected": "Instagram no conectado",
+    "profileHeader": "Perfil de Instagram",
+    "engagementHeader": "Compromiso y Alcance"
   }
 }

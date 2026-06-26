@@ -408,5 +408,25 @@
     "statusPastDue": "Past due",
     "statusCanceled": "Canceled",
     "statusFree": "No plan"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Performance of your Instagram posts",
+    "refresh": "Refresh",
+    "followers": "Followers",
+    "reach30d": "Reach (30d)",
+    "impressions": "Impressions",
+    "publications": "Publications",
+    "totalLikes": "Total Likes",
+    "comments": "Comments",
+    "totalReach": "Total Reach",
+    "avgEngagement": "Avg. Engagement",
+    "recentPosts": "Recent Posts",
+    "noCaption": "No caption",
+    "noPosts": "No posts found. Publish carousels to see metrics here.",
+    "connectIg": "Connect Instagram →",
+    "notConnected": "Instagram not connected",
+    "profileHeader": "Instagram Profile",
+    "engagementHeader": "Engagement & Reach"
   }
 }

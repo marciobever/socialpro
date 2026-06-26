@@ -8,8 +8,20 @@ import { motion } from 'framer-motion';
 import {
   UserCircle, CreditCard, Zap, CheckCircle2, AlertCircle,
   Loader2, ExternalLink, ChevronRight, Palette, LogOut, RefreshCw,
-  Link2, Link2Off, Check, ChevronDown,
+  Link2, Link2Off, Check, ChevronDown, Save, X as XIcon, Pencil,
 } from 'lucide-react';
+
+// Helper: initials avatar
+function InitialsAvatar({ name, className }: { name: string; className?: string }) {
+  const initials = name
+    ? name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+    : '?';
+  return (
+    <div className={`flex items-center justify-center rounded-2xl bg-gradient-to-tr from-accent-purple to-accent-cyan flex-shrink-0 shadow-lg ${className}`}>
+      <span className="text-white font-bold select-none" style={{ fontSize: initials.length > 1 ? '1.4rem' : '1.7rem' }}>{initials}</span>
+    </div>
+  );
+}
 
 function InstagramIcon({ className }: { className?: string }) {
   return (
@@ -47,11 +59,18 @@ export default function AccountPage() {
   const router = useRouter();
   const t = useTranslations('account');
   const { data: session } = useSession();
-  const { subscription, loadSubscription, brandKit, setUpgradeModalOpen } = useAppContext();
+  const { subscription, loadSubscription, brandKit, setBrandKit, setUpgradeModalOpen } = useAppContext();
 
   const [loadingPortal,   setLoadingPortal]   = useState(false);
   const [refreshing,      setRefreshing]       = useState(false);
   const [portalError,     setPortalError]      = useState('');
+
+  // Profile editing
+  const [editingProfile,  setEditingProfile]  = useState(false);
+  const [editName,        setEditName]        = useState('');
+  const [editHandle,      setEditHandle]      = useState('');
+  const [editBio,         setEditBio]         = useState('');
+  const [savingProfile,   setSavingProfile]   = useState(false);
 
   // Social connections — Instagram
   const [metaStatus,       setMetaStatus]       = useState<MetaStatus | null>(null);
@@ -70,6 +89,35 @@ export default function AccountPage() {
   const [twitterStatus,      setTwitterStatus]      = useState<{ connected: boolean; username: string | null } | null>(null);
   const [twitterLoading,     setTwitterLoading]     = useState(true);
   const [twitterDisconnecting, setTwitterDisconnecting] = useState(false);
+
+  const startEditProfile = () => {
+    setEditName(brandKit.brandName);
+    setEditHandle(brandKit.brandHandle);
+    setEditBio(brandKit.aiBio);
+    setEditingProfile(true);
+  };
+
+  const cancelEditProfile = () => setEditingProfile(false);
+
+  const saveProfile = async () => {
+    setSavingProfile(true);
+    try {
+      await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brandName: editName,
+          brandHandle: editHandle,
+          aiBio: editBio,
+          avatarUrl: brandKit.avatarUrl, // preserve existing avatar
+        }),
+      });
+      setBrandKit(prev => ({ ...prev, brandName: editName, brandHandle: editHandle, aiBio: editBio }));
+      setEditingProfile(false);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   useEffect(() => {
     // Handle OAuth callback params
@@ -188,29 +236,80 @@ export default function AccountPage() {
         <motion.div
           whileHover={{ y: -2 }}
           transition={spring}
-          className="md:col-span-4 bg-[#181b25]/40 border border-white/[0.08] hover:border-white/[0.14] rounded-3xl p-6 flex flex-col sm:flex-row items-center sm:items-start justify-between gap-5 relative overflow-hidden backdrop-blur-xl transition-all duration-300"
+          className="md:col-span-4 bg-[#181b25]/40 border border-white/[0.08] hover:border-white/[0.14] rounded-3xl p-6 flex flex-col gap-5 relative overflow-hidden backdrop-blur-xl transition-all duration-300"
         >
           <div className="absolute inset-0 bg-gradient-to-tr from-accent-purple/[0.01] to-accent-cyan/[0.01] pointer-events-none" />
-          <div className="flex flex-col sm:flex-row items-center gap-5 min-w-0 w-full">
+
+          {/* Avatar + name row */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
             {brandKit.avatarUrl ? (
-              <img src={brandKit.avatarUrl} alt="Avatar"
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={brandKit.avatarUrl} alt={brandKit.brandName || 'Avatar'}
                 className="h-16 w-16 rounded-2xl object-cover border-2 border-accent-purple/30 flex-shrink-0 shadow-lg shadow-black/30" />
             ) : (
-              <div className="h-16 w-16 rounded-2xl bg-accent-purple/10 border-2 border-accent-purple/20 flex items-center justify-center flex-shrink-0 shadow-lg">
-                <UserCircle className="h-8 w-8 text-accent-purple" />
+              <InitialsAvatar name={brandKit.brandName || session?.user?.name || '?'} className="h-16 w-16" />
+            )}
+
+            <div className="flex-1 min-w-0 text-center sm:text-left">
+              {editingProfile ? (
+                <div className="space-y-2">
+                  <input
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    placeholder="Nome"
+                    className="w-full bg-white/[0.04] border border-white/[0.1] rounded-xl px-3 py-1.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-accent-purple/40 transition-colors"
+                  />
+                  <input
+                    value={editHandle}
+                    onChange={e => setEditHandle(e.target.value)}
+                    placeholder="@handle"
+                    className="w-full bg-white/[0.04] border border-white/[0.1] rounded-xl px-3 py-1.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-accent-purple/40 transition-colors"
+                  />
+                  <textarea
+                    value={editBio}
+                    onChange={e => setEditBio(e.target.value)}
+                    placeholder="Bio..."
+                    rows={2}
+                    className="w-full bg-white/[0.04] border border-white/[0.1] rounded-xl px-3 py-1.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-accent-purple/40 transition-colors resize-none"
+                  />
+                  <div className="flex items-center gap-2">
+                    <button onClick={saveProfile} disabled={savingProfile}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-accent-purple to-accent-cyan text-xs font-bold text-white disabled:opacity-50 cursor-pointer">
+                      {savingProfile ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                      Salvar
+                    </button>
+                    <button onClick={cancelEditProfile}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/[0.08] text-xs font-semibold text-white/50 hover:text-white transition-colors cursor-pointer">
+                      <XIcon className="h-3 w-3" /> Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h2 className="text-lg font-bold text-white truncate">{brandKit.brandName || '—'}</h2>
+                  <p className="text-sm text-accent-cyan font-medium truncate mt-0.5">{brandKit.brandHandle || '—'}</p>
+                  {brandKit.aiBio && <p className="text-xs text-white/40 mt-1 line-clamp-2 leading-relaxed">{brandKit.aiBio}</p>}
+                  <p className="text-xs text-white/30 mt-1 truncate">{session?.user?.email}</p>
+                </>
+              )}
+            </div>
+
+            {/* Edit / Brand Kit buttons */}
+            {!editingProfile && (
+              <div className="flex flex-col gap-2 flex-shrink-0 w-full sm:w-auto">
+                <button onClick={startEditProfile}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-xs font-semibold text-white/60 hover:text-white hover:border-white/20 hover:bg-white/[0.06] transition-all cursor-pointer justify-center">
+                  <Pencil className="h-3.5 w-3.5 text-accent-cyan" />
+                  Editar dados
+                </button>
+                <button onClick={() => router.push('/app/brand')}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-xs font-semibold text-white/60 hover:text-white hover:border-white/20 hover:bg-white/[0.06] transition-all cursor-pointer justify-center">
+                  <Palette className="h-3.5 w-3.5 text-accent-purple" />
+                  {t('editProfile')}
+                </button>
               </div>
             )}
-            <div className="flex-1 min-w-0 text-center sm:text-left">
-              <h2 className="text-lg font-bold text-white truncate">{brandKit.brandName || '—'}</h2>
-              <p className="text-sm text-accent-cyan font-medium truncate mt-0.5">{brandKit.brandHandle || '—'}</p>
-              <p className="text-xs text-white/40 mt-1 truncate">{session?.user?.email}</p>
-            </div>
           </div>
-          <button onClick={() => router.push('/app/brand')}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-xs font-semibold text-white/60 hover:text-white hover:border-white/20 hover:bg-white/[0.06] transition-all flex-shrink-0 cursor-pointer w-full sm:w-auto justify-center">
-            <Palette className="h-3.5 w-3.5 text-accent-purple" />
-            {t('editProfile')}
-          </button>
         </motion.div>
 
         {/* Tile 2: Quick Links / Actions (span 2) */}
