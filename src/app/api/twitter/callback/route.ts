@@ -32,11 +32,17 @@ export async function GET(req: NextRequest) {
   const redirectUri  = `${baseUrl}/api/twitter/callback`;
 
   // Exchange code + PKCE verifier for token
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
   const tokenRes = await fetch("https://api.twitter.com/2/oauth2/token", {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded", "Authorization": `Basic ${credentials}` },
-    body: new URLSearchParams({ code, grant_type: "authorization_code", redirect_uri: redirectUri, code_verifier: codeVerifier }),
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: redirectUri,
+      code_verifier: codeVerifier,
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
   });
   const tokenData = await tokenRes.json();
   if (!tokenData.access_token) {
