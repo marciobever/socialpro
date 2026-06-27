@@ -35,6 +35,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${baseUrl}/app/account?twitter_error=missing_env_vars_client_${!!clientId}_secret_${!!clientSecret}`);
   }
 
+  console.log("[twitter/callback] Debugging ClientID prefix:", clientId.substring(0, 5), "length:", clientId.length);
+
   // Exchange code + PKCE verifier for token (requires Basic Authorization for X Confidential Clients)
   const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
   const tokenRes = await fetch("https://api.x.com/2/oauth2/token", {
