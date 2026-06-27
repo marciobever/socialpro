@@ -35,6 +35,8 @@ interface AppContextType {
   setWatermarkType: (type: WatermarkType) => void;
   platform: PlatformType;
   setPlatform: (platform: PlatformType) => void;
+  xPostFormat: 'text' | 'image';
+  setXPostFormat: (format: 'text' | 'image') => void;
   tone: ToneType;
   setTone: (tone: ToneType) => void;
   content: string;
@@ -174,6 +176,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [styleModel, setStyleModel] = useState<CarouselStyleModel>('lifestyle');
   const [watermarkType, setWatermarkType] = useState<WatermarkType>('both');
   const [platform, setPlatform] = useState<PlatformType>('instagram');
+  const [xPostFormat, setXPostFormat] = useState<'text' | 'image'>('text');
   const [tone, setTone] = useState<ToneType>('provocativo');
 
   const [content, setContent] = useState<string>('');
@@ -382,7 +385,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const response = await fetch('/api/ai/carousel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, tone, aiBio: brandKit.aiBio, slideCount: carouselSlideCount, styleDesc: STYLE_PROMPTS[lockedStyle] }),
+        body: JSON.stringify({ topic, tone, aiBio: brandKit.aiBio, slideCount: carouselSlideCount, styleDesc: STYLE_PROMPTS[lockedStyle], platform }),
       });
 
       // No active plan / quota reached → upgrade modal, NO local fallback.
@@ -416,7 +419,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             topic, tone, style: lockedStyle, slideCount: carouselSlideCount,
-            slides: generated, caption: data.caption ?? null, platform: 'instagram',
+            slides: generated, caption: data.caption ?? null, platform: platform,
           }),
         });
 
@@ -570,7 +573,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const response = await fetch('/api/ai/refine', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, tone, aiBio: brandKit.aiBio }),
+        body: JSON.stringify({ content, tone, aiBio: brandKit.aiBio, platform }),
       });
       if (response.ok) {
         const data = await response.json();
@@ -591,7 +594,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const response = await fetch('/api/ai/refine', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: topic, tone, aiBio: brandKit.aiBio }),
+        body: JSON.stringify({ content: topic, tone, aiBio: brandKit.aiBio, platform }),
       });
       if (!response.ok) throw new Error('Falha ao gerar o post.');
       const data = await response.json();
@@ -639,6 +642,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       styleModel, setStyleModel,
       watermarkType, setWatermarkType,
       platform, setPlatform,
+      xPostFormat, setXPostFormat,
       tone, setTone,
       content, setContent,
       slides, setSlides,

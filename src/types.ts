@@ -16,6 +16,7 @@ export interface Slide {
   imageUrl?: string;
   imagePrompt?: string;
   isGeneratingImage?: boolean;
+  layoutTemplate?: 'default' | 'hook' | 'comparison' | 'mockup' | 'cta';
 }
 
 export interface SocialPostState {

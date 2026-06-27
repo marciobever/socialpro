@@ -83,6 +83,7 @@ export function CreationFlow() {
 
   const {
     platform, setPlatform,
+    xPostFormat, setXPostFormat,
     tone, setTone,
     styleModel, setStyleModel,
     watermarkType, setWatermarkType,
@@ -97,7 +98,7 @@ export function CreationFlow() {
   const [creationStep, setCreationStep] = React.useState<'platform' | 'create'>('platform');
   const fileRef = React.useRef<HTMLInputElement>(null);
 
-  const isCarousel = platform === 'instagram';
+  const isCarousel = platform === 'instagram' || platform === 'linkedin' || (platform === 'x' && xPostFormat === 'image');
   const isAvatarStyle = ['infantil', 'pixar', 'anime', 'flat', 'cartoon'].includes(styleModel);
 
   const cleanName = brandKit.brandName || 'SocialPro';
@@ -143,6 +144,9 @@ export function CreationFlow() {
                     key={f.id}
                     onClick={() => {
                       setPlatform(f.id);
+                      if (f.id === 'x') {
+                        setXPostFormat('text');
+                      }
                       setCreationStep('create');
                     }}
                     whileHover={{ scale: 1.025, translateY: -4 }}
@@ -301,6 +305,43 @@ export function CreationFlow() {
             <div className="space-y-4 pt-1 flex-shrink-0 w-full">
               <div className="rounded-3xl border border-white/[0.08] bg-[#181b25]/40 p-6 space-y-6 relative overflow-hidden w-full text-left">
                 <div className="absolute inset-0 bg-gradient-to-tr from-accent-purple/[0.01] to-accent-cyan/[0.01] pointer-events-none" />
+ 
+                {/* Format selection for X / Twitter */}
+                {platform === 'x' && (
+                  <div className="space-y-3 relative z-10 pb-4 border-b border-white/[0.05]">
+                    <span className="text-[10px] font-bold text-white/45 uppercase tracking-[0.14em] block px-0.5">Formato do Post</span>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setXPostFormat('text');
+                          setCarouselSlideCount(5); // Reset slide count if switched to text (though unused)
+                        }}
+                        className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          xPostFormat === 'text'
+                            ? 'border-accent-purple/60 bg-accent-purple/[0.14] text-white shadow-[0_0_0_1px_rgba(139,92,246,0.3),0_0_14px_rgba(139,92,246,0.18)]'
+                            : 'border-white/[0.07] bg-white/[0.03] text-white/45 hover:text-white/85 hover:border-white/[0.16] hover:bg-white/[0.05]'
+                        }`}
+                      >
+                        ✍️ Apenas Texto
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setXPostFormat('image');
+                          setCarouselSlideCount(1); // X image post is exactly 1 slide!
+                        }}
+                        className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          xPostFormat === 'image'
+                            ? 'border-accent-purple/60 bg-accent-purple/[0.14] text-white shadow-[0_0_0_1px_rgba(139,92,246,0.3),0_0_14px_rgba(139,92,246,0.18)] font-bold'
+                            : 'border-white/[0.07] bg-white/[0.03] text-white/45 hover:text-white/85 hover:border-white/[0.16] hover:bg-white/[0.05]'
+                        }`}
+                      >
+                        🖼️ Imagem + Texto
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Visual Style Selector (only for Instagram) */}
                 {isCarousel && (
@@ -378,7 +419,7 @@ export function CreationFlow() {
                 )}
 
                 {/* Adjustments Panel: Tone, Slides, Watermark */}
-                <div className={`grid gap-6 relative z-10 ${isCarousel ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1'}`}>
+                <div className={`grid gap-6 relative z-10 ${isCarousel ? (platform === 'x' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3') : 'grid-cols-1'}`}>
                   {/* Tone Selection */}
                   <div className="space-y-3">
                     <span className="text-[10px] font-bold text-white/45 uppercase tracking-[0.14em] block px-0.5">{t('toneOfVoiceLabel')}</span>
@@ -406,7 +447,7 @@ export function CreationFlow() {
                   </div>
 
                   {/* Slides Count (Instagram only) */}
-                  {isCarousel && (
+                  {isCarousel && platform !== 'x' && (
                     <div className="space-y-3">
                       <div>
                         <span className="text-[10px] font-bold text-white/45 uppercase tracking-[0.14em] block px-0.5">{t('carouselSizeLabel')}</span>

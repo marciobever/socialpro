@@ -11,6 +11,8 @@ import { toast } from '@/components/Toast';
 import type { Slide } from '@/types';
 
 const ease = [0.16, 1, 0.3, 1] as const;
+import { SlideRenderer } from './SlideRenderer';
+import { CarouselExporter } from '@/lib/CarouselExporter';
 const spring = { type: 'spring' as const, stiffness: 400, damping: 28 };
 const GRADIENTS = [
   'linear-gradient(135deg,#4f46e5,#7c3aed,#c084fc)',
@@ -77,12 +79,15 @@ const SlideCard = React.memo(function SlideCard({
             <span className="text-[9px] text-white/40 font-semibold">Gerando...</span>
           </div>
         ) : (
-          <div className="w-full h-full flex flex-col justify-between p-3" style={{ background: slide.background }}>
-            <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">Slide {index + 1}</span>
-            <div className="space-y-1">
-              <p className="text-[11px] font-extrabold text-white leading-tight line-clamp-3" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>{slide.title || 'Título'}</p>
-              <p className="text-[9px] text-white/75 leading-snug line-clamp-2">{slide.subtitle}</p>
-            </div>
+          <div className="w-full h-full" style={{ background: slide.background }}>
+            <SlideRenderer
+              title={slide.title}
+              subtitle={slide.subtitle}
+              layoutTemplate={slide.layoutTemplate}
+              index={index}
+              total={total}
+              isThumbnail={true}
+            />
           </div>
         )}
 
@@ -142,9 +147,10 @@ export function CarouselWorkspace({
     isGeneratingCarousel,
     handleRegenerateSlideImage,
     handleRegenerateAllImages,
+    brandKit,
   } = useAppContext();
 
-  const [isExportingAll, setIsExportingAll] = React.useState(false);
+  const [exporting, setExporting] = React.useState<'pdf' | 'zip' | null>(null);
   const [isRegeneratingAll, setIsRegeneratingAll] = React.useState(false);
   const [outdatedSlideIds, setOutdatedSlideIds] = React.useState<Set<string>>(new Set());
 
@@ -181,20 +187,48 @@ export function CarouselWorkspace({
     return canvas;
   };
 
-  const handleDownloadAll = async () => {
-    if (isExportingAll) return;
-    setIsExportingAll(true);
+  const handleExportPDF = async () => {
+    if (exporting) return;
+    setExporting('pdf');
+    let toastId = toast.loading('Preparando PDF...', 'Renderizando slides...');
     try {
-      for (let i = 0; i < slides.length; i++) {
-        const slide = slides[i];
-        const link = document.createElement('a');
-        link.download = `socialpro-slide-${i + 1}.png`;
-        link.href = slide?.imageUrl ?? (renderGradientSlide(slide, i)?.toDataURL('image/png') ?? '');
-        link.click();
-        await new Promise(r => setTimeout(r, 350));
-      }
-      toast.success('Download concluído', `${slides.length} slides baixados`);
-    } finally { setIsExportingAll(false); }
+      const handle = brandKit?.brandHandle || '@usuario';
+      const blob = await CarouselExporter.exportToPDF(slides, handle, (current, total, status) => {
+        toast.dismiss(toastId);
+        toastId = toast.loading('Gerando PDF...', `${current}/${total} - ${status}`);
+      });
+      CarouselExporter.triggerDownload(blob, `carrossel-${carouselTopic || 'post'}.pdf`);
+      toast.dismiss(toastId);
+      toast.success('PDF Exportado', 'Seu carrossel em PDF foi baixado com sucesso.');
+    } catch (err: any) {
+      console.error('PDF Export Error details:', err);
+      toast.dismiss(toastId);
+      toast.error('Erro ao exportar PDF', err?.message || 'Ocorreu um erro.');
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const handleExportZIP = async () => {
+    if (exporting) return;
+    setExporting('zip');
+    let toastId = toast.loading('Preparando ZIP...', 'Renderizando imagens...');
+    try {
+      const handle = brandKit?.brandHandle || '@usuario';
+      const blob = await CarouselExporter.exportToZIP(slides, handle, (current, total, status) => {
+        toast.dismiss(toastId);
+        toastId = toast.loading('Gerando ZIP...', `${current}/${total} - ${status}`);
+      });
+      CarouselExporter.triggerDownload(blob, `imagens-${carouselTopic || 'post'}.zip`);
+      toast.dismiss(toastId);
+      toast.success('ZIP Exportado', 'As imagens foram compactadas e baixadas com sucesso.');
+    } catch (err: any) {
+      console.error('ZIP Export Error details:', err);
+      toast.dismiss(toastId);
+      toast.error('Erro ao exportar ZIP', err?.message || 'Ocorreu um erro.');
+    } finally {
+      setExporting(null);
+    }
   };
 
   const handleMoveSlide = (index: number, dir: -1 | 1) => {
@@ -245,7 +279,7 @@ export function CarouselWorkspace({
     setCarouselSlideCount(newCount);
   };
 
-  const handleUpdateActiveSlide = (field: 'title' | 'subtitle', value: string) => {
+  const handleUpdateActiveSlide = (field: 'title' | 'subtitle' | 'layoutTemplate', value: string) => {
     const updated = slides.map((s, i) => (i === activeSlideIndex ? { ...s, [field]: value } : s));
     setSlides(updated);
   };
@@ -347,14 +381,27 @@ export function CarouselWorkspace({
           <span className="h-4 w-px bg-white/[0.08] mx-0.5 hidden xl:inline" />
 
           <motion.button
-            onClick={handleDownloadAll}
-            disabled={isExportingAll || !readyToPublish}
+            onClick={handleExportPDF}
+            disabled={!!exporting}
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+            title="Exportar carrossel em PDF de alta qualidade para LinkedIn"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10.5px] font-bold border border-white/[0.08] bg-[#14161e] text-white/60 hover:text-accent-purple hover:border-accent-purple/30 disabled:opacity-35 transition-colors cursor-pointer"
+          >
+            {exporting === 'pdf' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            <span>Exportar PDF</span>
+          </motion.button>
+
+          <motion.button
+            onClick={handleExportZIP}
+            disabled={!!exporting}
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+            title="Exportar imagens PNG em arquivo ZIP para Instagram"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10.5px] font-bold text-white bg-gradient-to-r from-accent-purple/90 to-accent-cyan/90 hover:from-accent-purple hover:to-accent-cyan disabled:opacity-35 transition-all cursor-pointer shadow-[0_2px_8px_rgba(139,92,246,0.15)] hover:shadow-[0_4px_12px_rgba(139,92,246,0.3)] border border-white/10"
           >
-            {isExportingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-            <span>Baixar imagens</span>
+            {exporting === 'zip' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            <span>Baixar ZIP (PNG)</span>
           </motion.button>
         </div>
       </div>
@@ -462,7 +509,21 @@ export function CarouselWorkspace({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-[200px_minmax(0,1fr)] gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-[140px_200px_minmax(0,1fr)] gap-3">
+            <div className="space-y-1">
+              <span className="text-[9.5px] font-bold text-white/35 uppercase tracking-wider block px-0.5">Layout</span>
+              <select
+                value={activeSlide.layoutTemplate || 'default'}
+                onChange={e => handleUpdateActiveSlide('layoutTemplate', e.target.value)}
+                className="w-full bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] focus:border-accent-purple/40 rounded-xl px-2.5 py-2.5 text-[12px] font-bold text-white outline-none cursor-pointer transition-all"
+              >
+                <option value="default" className="text-black">Padrão</option>
+                <option value="hook" className="text-black">Gancho</option>
+                <option value="comparison" className="text-black">Comparativo</option>
+                <option value="mockup" className="text-black">Mockup</option>
+                <option value="cta" className="text-black">CTA Final</option>
+              </select>
+            </div>
             <div className="space-y-1">
               <span className="text-[9.5px] font-bold text-white/35 uppercase tracking-wider block px-0.5">Título do Slide</span>
               <input

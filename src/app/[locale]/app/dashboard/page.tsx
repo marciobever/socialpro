@@ -262,6 +262,7 @@ function DashboardPage() {
     handleRefineCaption, handleGenerateTextPost,
     subscription,
     upgradeModalOpen, setUpgradeModalOpen, upgradeReason,
+    xPostFormat, setXPostFormat,
   } = useAppContext();
 
   // Load carousel from history when ?load=<id> is in the URL
@@ -282,7 +283,11 @@ function DashboardPage() {
           setActiveSlideIndex(0);
           if (carousel.topic) setCarouselTopic(carousel.topic);
           if (carousel.caption) setContent(carousel.caption);
-          setPlatform('instagram');
+          const loadedPlatform = carousel.platform || 'instagram';
+          setPlatform(loadedPlatform);
+          if (loadedPlatform === 'x') {
+            setXPostFormat(dbSlides.length === 1 ? 'image' : 'text');
+          }
         }
       })
       .catch(console.error);
@@ -301,7 +306,7 @@ function DashboardPage() {
   const [confirmRedoOpen, setConfirmRedoOpen] = React.useState(false);
   const [confirmNewPostOpen, setConfirmNewPostOpen] = React.useState(false);
 
-  const isCarousel = platform === 'instagram';
+  const isCarousel = platform === 'instagram' || platform === 'linkedin' || (platform === 'x' && xPostFormat === 'image');
   const showWorkspace = (isCarousel && (slides.length > 0 || isGeneratingCarousel)) ||
                         (!isCarousel && (content.trim().length > 0 || isGenerating));
 

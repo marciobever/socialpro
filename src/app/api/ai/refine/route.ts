@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'OPENAI_API_KEY não configurada.' }, { status: 400 });
     }
 
-    const { content, tone, aiBio, instruction } = await request.json();
+    const { content, tone, aiBio, instruction, platform } = await request.json();
     if (!content) {
       return NextResponse.json({ error: 'O conteúdo original é obrigatório.' }, { status: 400 });
     }
@@ -36,23 +36,58 @@ export async function POST(request: Request) {
 
     const openai = new OpenAI({ apiKey });
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-5.4-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `Você é um redator publicitário de elite especializado em mídias sociais (LinkedIn e Instagram).
-Refine o rascunho do usuário tornando-o magnético, persuasivo e adequado ao algoritmo.
+    let systemPrompt = '';
+    const cleanTone = tone || 'autoridade';
+    const toneInstruction = TONE_INSTRUCTIONS[cleanTone] || TONE_INSTRUCTIONS.autoridade;
+
+    if (platform === 'x') {
+      systemPrompt = `Você é um redator publicitário de elite especialista em X (Twitter).
+Refine o rascunho do usuário tornando-o magnético, conciso e com alto potencial de engajamento no X.
+
+BIO DO USUÁRIO: "${aiBio || 'Criador de conteúdo e especialista.'}"
+TOM DE VOZ: "${cleanTone.toUpperCase()}" — ${toneInstruction}
+
+REGRAS ESTRITAS DO X:
+- O texto final deve conter no MÁXIMO 280 caracteres. Mantenha-o extremamente curto e focado!
+- Sem hashtags (ou no máximo 1 hashtag).
+- Sem saudações, introduções ou explicações. Retorne APENAS o tweet pronto.
+- Use ganchos muito diretos e estilo microblogging simples (frases curtas, espaçadas).${extraInstruction}`;
+    } else if (platform === 'linkedin') {
+      systemPrompt = `Você é um redator publicitário de elite especialista em LinkedIn.
+Refine o rascunho do usuário transformando-o em um artigo/post de alta autoridade para o LinkedIn.
+
+BIO DO USUÁRIO: "${aiBio || 'Especialista e criador de conteúdo no LinkedIn.'}"
+TOM DE VOZ: "${cleanTone.toUpperCase()}" — ${toneInstruction}
+
+REGRAS DO LINKEDIN:
+- Retorne APENAS o texto refinado pronto para publicação. Sem introduções ou explicações.
+- Escreva de forma profissional, com ganchos maduros nas primeiras duas linhas.
+- Estruture o texto com bom espaçamento (estilo microblogging profissional), usando listas por tópicos ou numéricas se necessário.
+- Use no máximo 3 hashtags relevantes no final do texto.
+- Finalize com uma chamada para ação (CTA) que convide os usuários a comentarem/debaterem profissionalmente.${extraInstruction}`;
+    } else {
+      // Instagram / Outros
+      systemPrompt = `Você é um redator publicitário de elite especializado em mídias sociais (Instagram).
+Refine o rascunho do usuário tornando-o magnético, persuasivo e adequado ao algoritmo do Instagram.
 
 BIO DO USUÁRIO: "${aiBio || 'Criador de conteúdo e especialista de marketing.'}"
-TOM DE VOZ: "${(tone || 'autoridade').toUpperCase()}" — ${TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.autoridade}
+TOM DE VOZ: "${cleanTone.toUpperCase()}" — ${toneInstruction}
 
 REGRAS:
 - Retorne APENAS o texto do post refinado, pronto para publicação.
 - Sem saudações, introduções ou explicações.
 - Espaçamento limpo entre linhas (estilo microblogging).
 - Gancho forte nas primeiras duas linhas.
-- Finalize com CTA sutil para comentários ou compartilhamentos.${extraInstruction}`,
+- Finalize com CTA sutil para comentários ou salvamento.
+- Use 5 a 10 hashtags relevantes no final.${extraInstruction}`;
+    }
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-5.4-mini',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt,
         },
         {
           role: 'user',

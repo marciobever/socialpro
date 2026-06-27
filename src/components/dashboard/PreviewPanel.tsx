@@ -2,6 +2,7 @@
 import React from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { ChevronLeft, ChevronRight, ImageIcon, Loader2 } from 'lucide-react';
+import { SlideRenderer } from './SlideRenderer';
 
 interface PanelHeaderProps {
   label: string;
@@ -75,14 +76,16 @@ export function PreviewPanel() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={previewSlide.imageUrl} alt="" className="w-full h-full object-cover" />
                 ) : previewSlide?.background ? (
-                  <div className="w-full h-full flex flex-col justify-between p-4" style={{ background: previewSlide.background }}>
-                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">
-                      {brandKit.brandHandle || '@handle'}
-                    </span>
-                    <div className="space-y-1">
-                      <p className="text-[13px] font-black text-white leading-tight line-clamp-3" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}>{previewSlide.title || 'Título do slide'}</p>
-                      <p className="text-[10px] text-white/75 line-clamp-2">{previewSlide.subtitle}</p>
-                    </div>
+                  <div className="w-full h-full" style={{ background: previewSlide.background }}>
+                    <SlideRenderer
+                      title={previewSlide.title}
+                      subtitle={previewSlide.subtitle}
+                      layoutTemplate={previewSlide.layoutTemplate}
+                      index={activeSlideIndex}
+                      total={slides.length}
+                      brandHandle={brandKit.brandHandle}
+                      isThumbnail={false}
+                    />
                   </div>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center gap-2" style={{ background: '#14161e' }}>

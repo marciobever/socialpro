@@ -60,6 +60,15 @@ function fallbackSlides(topic: string, tone: string, slideCount: number): Genera
     storyteller: 'COMO TUDO COMEÇOU',
     meme: 'NINGUÉM ESTAVA PRONTO PRA ISSO',
   };
+
+  if (slideCount === 1) {
+    return [{
+      title: hooks[tone] || hooks.autoridade,
+      subtitle: `Entenda de vez sobre ${short} com este insight visual rápido.`,
+      imagePrompt: `Dramatic cinematic illustration representing "${topic}", dark atmospheric, premium aesthetic`,
+    }];
+  }
+
   const slides: GeneratedSlide[] = [
     {
       title: hooks[tone] || hooks.autoridade,
@@ -103,7 +112,10 @@ export async function POST(request: Request) {
     const tone: string = (body?.tone || 'autoridade').toString();
     const aiBio: string = (body?.aiBio || '').toString();
     const styleDesc: string = (body?.styleDesc || 'dark cinematic aesthetic, moody dramatic lighting, premium editorial quality').toString();
-    const slideCount = Math.min(Math.max(parseInt(body?.slideCount, 10) || 5, 3), 16);
+    const platform: string = (body?.platform || 'instagram').toString();
+    const slideCount = platform === 'x'
+      ? 1
+      : Math.min(Math.max(parseInt(body?.slideCount, 10) || 5, 3), 16);
 
     if (!topic) {
       return NextResponse.json({ error: 'Informe um tema para gerar o carrossel.' }, { status: 400 });
@@ -136,13 +148,10 @@ Responda em português.`,
       console.error('Web search falhou, continuando sem pesquisa:', searchErr);
     }
 
-    // Step 2: Structure researched data into carousel slides
-    const structureResponse = await openai.chat.completions.create({
-      model: 'gpt-5.4-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `Você é um criador de conteúdo viral de elite para Instagram.
+    let systemPrompt = '';
+
+    if (platform === 'linkedin') {
+      systemPrompt = `Você é um criador de conteúdo viral de elite para o LinkedIn.
 Crie carrosséis com base em dados REAIS da pesquisa fornecida — NUNCA invente informações.
 
 CONTEXTO DO CRIADOR: "${aiBio || 'Criador de conteúdo e especialista de marketing.'}"
@@ -154,7 +163,6 @@ REGRAS DE CADA SLIDE:
 - "imagePrompt": cena visual ÚNICA e ESPECÍFICA do item deste slide, em inglês detalhado.
   Estilo visual obrigatório para todos os slides: "${styleDesc}".
   OBRIGATÓRIO: cada slide deve ter imagePrompt completamente diferente dos outros.
-  Para listas (ex: animes, filmes, apps), descreva a cena visual daquele item específico dentro do estilo acima.
   NUNCA repita o mesmo imagePrompt. Descreva ambiente, cores, objetos, emoção — sem mencionar texto.
 
 ESTRUTURA OBRIGATÓRIA:
@@ -165,7 +173,59 @@ ESTRUTURA OBRIGATÓRIA:
 Retorne APENAS JSON válido:
 {"slides":[{"title":"...","subtitle":"...","imagePrompt":"..."}, ...],"caption":"..."}
 Array de slides com EXATAMENTE ${slideCount} itens.
-"caption": legenda COMPLETA para Instagram. Mínimo 3 parágrafos: (1) gancho emocional de 1 linha que para o scroll, (2) desenvolvimento com insight real do tema, (3) CTA específico e urgente. Termine com 8-12 hashtags nicho relevantes. Entre 400-800 caracteres no total. NÃO use o título do slide como gancho — crie algo novo e mais profundo.`,
+"caption": legenda COMPLETA para o LinkedIn. Escreva um artigo profissional estruturado e atraente com ganchos maduros, parágrafos limpos e espaçados. Use uma chamada para ação (CTA) que convide a debater nos comentários de forma profissional. NUNCA use mais que 3 hashtags relevantes e evite clichês de vendas agressivas.`;
+    } else if (platform === 'x') {
+      systemPrompt = `Você é um redator de posts virais de elite para o X (Twitter).
+Crie um post visual contendo 1 único slide e 1 texto otimizado para o X (Twitter).
+Use dados REAIS da pesquisa fornecida — NUNCA invente informações.
+
+CONTEXTO DO CRIADOR: "${aiBio || 'Criador de conteúdo e especialista de marketing.'}"
+TOM DE VOZ: "${tone.toUpperCase()}" — ${TONE_HINTS[tone] || TONE_HINTS.autoridade}
+
+REGRAS DO SLIDE:
+- "title": máximo 6 palavras em CAIXA ALTA, sem emojis, sem aspas
+- "subtitle": 2-3 frases ricas, máximo 200 caracteres. Use dados concretos, números reais.
+- "imagePrompt": cena visual ÚNICA e ESPECÍFICA do tema deste post, em inglês detalhado.
+  Estilo visual obrigatório: "${styleDesc}".
+
+Retorne APENAS JSON válido:
+{"slides":[{"title":"...","subtitle":"...","imagePrompt":"..."}],"caption":"..."}
+Array de slides com EXATAMENTE 1 item.
+"caption": O texto do tweet principal. Deve ser curto, extremamente direto e magnético. Máximo 280 caracteres. Sem hashtags (ou no máximo 1 hashtag), sem rodeios, formato limpo e com espaçamento curto.`;
+    } else {
+      // Instagram (default)
+      systemPrompt = `Você é um criador de conteúdo viral de elite para Instagram.
+Crie carrosséis com base em dados REAIS da pesquisa fornecida — NUNCA invente informações.
+
+CONTEXTO DO CRIADOR: "${aiBio || 'Criador de conteúdo e especialista de marketing.'}"
+TOM DE VOZ: "${tone.toUpperCase()}" — ${TONE_HINTS[tone] || TONE_HINTS.autoridade}
+
+REGRAS DE CADA SLIDE:
+- "title": máximo 6 palavras em CAIXA ALTA, sem emojis, sem aspas
+- "subtitle": 2-3 frases ricas, máximo 200 caracteres. Use dados concretos, números reais, exemplos específicos. Nunca frases genéricas como "salve e compartilhe" — isso vai no último slide apenas.
+- "imagePrompt": cena visual ÚNICA e ESPECÍFICA do item deste slide, em inglês detalhado.
+  Estilo visual obrigatório para todos os slides: "${styleDesc}".
+  OBRIGATÓRIO: cada slide deve ter imagePrompt completamente diferente dos outros.
+  NUNCA repita o mesmo imagePrompt. Descreva ambiente, cores, objetos, emoção — sem mencionar texto.
+
+ESTRUTURA OBRIGATÓRIA:
+- Slide 1: gancho de alta fricção (para o scroll) — imagePrompt: cena de impacto geral do tema
+- Slides do meio: 1 item por slide com dado real — imagePrompt: cena EXCLUSIVA daquele item específico
+- Último slide: CTA (salvar, comentar, seguir) — imagePrompt: cena motivacional de encerramento
+
+Retorne APENAS JSON válido:
+{"slides":[{"title":"...","subtitle":"...","imagePrompt":"..."}, ...],"caption":"..."}
+Array de slides com EXATAMENTE ${slideCount} itens.
+"caption": legenda COMPLETA para Instagram. Mínimo 3 parágrafos: (1) gancho emocional de 1 linha que para o scroll, (2) desenvolvimento com insight real do tema, (3) CTA específico e urgente. Termine com 8-12 hashtags nicho relevantes. Entre 400-800 caracteres no total. NÃO use o título do slide como gancho — crie algo novo e mais profundo.`;
+    }
+
+    // Step 2: Structure researched data into carousel slides
+    const structureResponse = await openai.chat.completions.create({
+      model: 'gpt-5.4-mini',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt,
         },
         {
           role: 'user',
