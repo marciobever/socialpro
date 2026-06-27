@@ -25,6 +25,11 @@ CREATE TABLE IF NOT EXISTS social_connections (
   instagram_account_id      TEXT,
   instagram_username        TEXT,
 
+  -- Generic Provider Account fields (X, LinkedIn, etc.)
+  provider_account_id       TEXT,
+  provider_username         TEXT,
+  refresh_token             TEXT,
+
   -- Timestamps
   connected_at              TIMESTAMPTZ DEFAULT NOW(),
   updated_at                TIMESTAMPTZ DEFAULT NOW(),

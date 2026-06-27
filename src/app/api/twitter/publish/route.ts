@@ -17,7 +17,7 @@ export async function POST(req: Request) {
 
   const { data: conn } = await getSupabase()
     .from("social_connections")
-    .select("access_token, instagram_username")
+    .select("access_token, provider_username")
     .eq("user_id", userId)
     .eq("provider", "x")
     .maybeSingle();
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "X/Twitter não conectado. Vá em Conta → Contas Conectadas." }, { status: 400 });
   }
 
-  const res = await fetch("https://api.twitter.com/2/tweets", {
+  const res = await fetch("https://api.x.com/2/tweets", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${conn.access_token}`,
@@ -45,6 +45,6 @@ export async function POST(req: Request) {
   return NextResponse.json({
     success: true,
     tweetId,
-    permalink: `https://x.com/${conn.instagram_username}/status/${tweetId}`,
+    permalink: `https://x.com/${conn.provider_username}/status/${tweetId}`,
   });
 }

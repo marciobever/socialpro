@@ -9,13 +9,13 @@ export async function GET() {
 
   const { data } = await getSupabase()
     .from("social_connections")
-    .select("instagram_username, token_expires_at")
+    .select("provider_username, token_expires_at")
     .eq("user_id", session.user.email)
     .eq("provider", "x")
     .maybeSingle();
 
   const expired = data?.token_expires_at ? new Date(data.token_expires_at) < new Date() : false;
-  return NextResponse.json({ connected: !!data && !expired, username: data?.instagram_username ?? null, expired });
+  return NextResponse.json({ connected: !!data && !expired, username: data?.provider_username ?? null, expired });
 }
 
 export async function DELETE() {
