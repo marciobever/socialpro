@@ -27,21 +27,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${baseUrl}/app/account?twitter_error=missing_params`);
   }
 
-  const clientId     = process.env.TWITTER_CLIENT_ID!;
-  const clientSecret = process.env.TWITTER_CLIENT_SECRET!;
+  const clientId     = process.env.TWITTER_CLIENT_ID;
+  const clientSecret = process.env.TWITTER_CLIENT_SECRET;
   const redirectUri  = `${baseUrl}/api/twitter/callback`;
 
-  // Exchange code + PKCE verifier for token
+  if (!clientId || !clientSecret) {
+    return NextResponse.redirect(`${baseUrl}/app/account?twitter_error=missing_env_vars_client_${!!clientId}_secret_${!!clientSecret}`);
+  }
+
+  // Exchange code + PKCE verifier for token (requires Basic Authorization for X Confidential Clients)
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
   const tokenRes = await fetch("https://api.twitter.com/2/oauth2/token", {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: { 
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Authorization": `Basic ${credentials}`
+    },
     body: new URLSearchParams({
       grant_type: "authorization_code",
       code,
       redirect_uri: redirectUri,
       code_verifier: codeVerifier,
-      client_id: clientId,
-      client_secret: clientSecret,
     }),
   });
   const tokenData = await tokenRes.json();
