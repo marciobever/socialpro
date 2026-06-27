@@ -41,7 +41,8 @@ export async function GET(req: NextRequest) {
   const tokenData = await tokenRes.json();
   if (!tokenData.access_token) {
     console.error("[twitter/callback] token error:", tokenData);
-    return NextResponse.redirect(`${baseUrl}/app/account?twitter_error=token_exchange`);
+    const errDesc = tokenData.error_description || tokenData.error || "token_exchange";
+    return NextResponse.redirect(`${baseUrl}/app/account?twitter_error=${encodeURIComponent(errDesc)}`);
   }
 
   // Get Twitter user info
