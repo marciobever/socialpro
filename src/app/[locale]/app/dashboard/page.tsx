@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/context/AppContext';
-import { Linkedin, Twitter, Instagram } from '@/components/icons';
+import { Linkedin, Instagram, Facebook, Pinterest } from '@/components/icons';
 import type { PlatformType, Slide, CarouselStyleModel } from '@/types';
 import {
   Zap, Check, Send, AlertTriangle, Info, Plus, Sliders, RefreshCw, Download, Clock, ChevronLeft
@@ -202,8 +202,9 @@ function StylePicker({ styleModel, onSelect, disabled }: {
 
 const FORMATS = [
   { id: 'instagram' as const, label: 'Instagram',  icon: Instagram, color: 'text-pink-400'  },
-  { id: 'x' as const,         label: 'X / Twitter', icon: Twitter,   color: 'text-sky-400'   },
-  { id: 'linkedin' as const,  label: 'LinkedIn',    icon: Linkedin,  color: 'text-blue-400'  },
+  { id: 'facebook' as const,  label: 'Facebook',   icon: Facebook,  color: 'text-blue-500'  },
+  { id: 'linkedin' as const,  label: 'LinkedIn',   icon: Linkedin,  color: 'text-blue-400'  },
+  { id: 'pinterest' as const, label: 'Pinterest',  icon: Pinterest, color: 'text-red-500'   },
 ];
 
 function PublishModal({ platform, open, onClose }: { platform: PlatformType; open: boolean; onClose: () => void }) {

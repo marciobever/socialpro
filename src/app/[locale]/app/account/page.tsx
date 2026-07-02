@@ -85,10 +85,15 @@ export default function AccountPage() {
   const [linkedinLoading,     setLinkedinLoading]     = useState(true);
   const [linkedinDisconnecting, setLinkedinDisconnecting] = useState(false);
 
-  // Social connections — X/Twitter
-  const [twitterStatus,      setTwitterStatus]      = useState<{ connected: boolean; username: string | null } | null>(null);
-  const [twitterLoading,     setTwitterLoading]     = useState(true);
-  const [twitterDisconnecting, setTwitterDisconnecting] = useState(false);
+  // Social connections — Facebook (Pages)
+  const [facebookStatus,      setFacebookStatus]      = useState<{ connected: boolean; pageName: string | null } | null>(null);
+  const [facebookLoading,     setFacebookLoading]     = useState(true);
+  const [facebookDisconnecting, setFacebookDisconnecting] = useState(false);
+
+  // Social connections — Pinterest
+  const [pinterestStatus,      setPinterestStatus]      = useState<{ connected: boolean; username: string | null } | null>(null);
+  const [pinterestLoading,     setPinterestLoading]     = useState(true);
+  const [pinterestDisconnecting, setPinterestDisconnecting] = useState(false);
 
   const startEditProfile = () => {
     setEditName(brandKit.brandName);
@@ -144,10 +149,15 @@ export default function AccountPage() {
       .catch(() => setLinkedinStatus({ connected: false, name: null }))
       .finally(() => setLinkedinLoading(false));
 
-    fetch('/api/twitter/status')
-      .then(r => r.json()).then(d => setTwitterStatus(d))
-      .catch(() => setTwitterStatus({ connected: false, username: null }))
-      .finally(() => setTwitterLoading(false));
+    fetch('/api/facebook/status')
+      .then(r => r.json()).then(d => setFacebookStatus(d))
+      .catch(() => setFacebookStatus({ connected: false, pageName: null }))
+      .finally(() => setFacebookLoading(false));
+
+    fetch('/api/pinterest/status')
+      .then(r => r.json()).then(d => setPinterestStatus(d))
+      .catch(() => setPinterestStatus({ connected: false, username: null }))
+      .finally(() => setPinterestLoading(false));
   }, []);
 
   const handleDisconnect = async () => {
@@ -486,9 +496,9 @@ export default function AccountPage() {
         <motion.div
           whileHover={{ y: -2 }}
           transition={spring}
-          className="md:col-span-2 bg-[#181b25]/40 border border-white/[0.08] hover:border-white/[0.14] rounded-3xl p-5 flex flex-col justify-between gap-4 relative overflow-hidden backdrop-blur-xl transition-all duration-300"
+          className="md:col-span-2 bg-[#181b25]/40 border border-white/[0.08] hover:border-white/[0.14] rounded-3xl p-5 flex flex-col justify-between gap-4 relative backdrop-blur-xl transition-all duration-300"
         >
-          <div className="absolute inset-0 bg-gradient-to-tr from-accent-purple/[0.01] to-accent-cyan/[0.01] pointer-events-none" />
+          <div className="absolute inset-0 rounded-3xl overflow-hidden bg-gradient-to-tr from-accent-purple/[0.01] to-accent-cyan/[0.01] pointer-events-none" />
           
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
@@ -603,31 +613,31 @@ export default function AccountPage() {
           </div>
         </motion.div>
 
-        {/* Tile 7: X / Twitter connection (span 2) */}
+        {/* Tile 7: Facebook connection */}
         <motion.div
           whileHover={{ y: -2 }}
           transition={spring}
-          className="md:col-span-2 bg-[#181b25]/40 border border-white/[0.08] hover:border-white/[0.14] rounded-3xl p-5 flex flex-col justify-between gap-4 relative overflow-hidden backdrop-blur-xl transition-all duration-300"
+          className="md:col-span-1 bg-[#181b25]/40 border border-white/[0.08] hover:border-white/[0.14] rounded-3xl p-5 flex flex-col justify-between gap-4 relative overflow-hidden backdrop-blur-xl transition-all duration-300"
         >
-          <div className="absolute inset-0 bg-gradient-to-tr from-accent-purple/[0.01] to-accent-cyan/[0.01] pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/[0.03] to-blue-400/[0.03] pointer-events-none" />
           
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="p-2 rounded-xl bg-white/5 border border-white/10">
-                <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              <div className="p-2 rounded-xl bg-blue-600/10 border border-blue-500/20">
+                <svg className="h-5 w-5 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-white">X / Twitter</p>
+                <p className="text-xs font-bold text-white">Facebook (Página)</p>
                 <p className="text-[10.5px] text-white/45 truncate mt-0.5">
-                  {twitterLoading ? t('verifying')
-                    : twitterStatus?.connected ? `@${twitterStatus.username}`
+                  {facebookLoading ? t('verifying')
+                    : facebookStatus?.connected ? `${facebookStatus.pageName}`
                     : t('notConnected')}
                 </p>
               </div>
             </div>
-            {!twitterLoading && twitterStatus?.connected && (
+            {!facebookLoading && facebookStatus?.connected && (
               <span className="flex items-center gap-1 text-[9px] font-extrabold uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full tracking-wider">
                 {t('active')}
               </span>
@@ -635,20 +645,67 @@ export default function AccountPage() {
           </div>
 
           <div className="space-y-2 pt-2">
-            {!twitterLoading && (twitterStatus?.connected ? (
-              <button onClick={async () => { setTwitterDisconnecting(true); await fetch('/api/twitter/status', { method: 'DELETE' }); setTwitterStatus({ connected: false, username: null }); setTwitterDisconnecting(false); }}
-                disabled={twitterDisconnecting}
+            {!facebookLoading && (facebookStatus?.connected ? (
+              <button onClick={async () => { setFacebookDisconnecting(true); await fetch('/api/facebook/status', { method: 'DELETE' }); setFacebookStatus({ connected: false, pageName: null }); setFacebookDisconnecting(false); }}
+                disabled={facebookDisconnecting}
                 className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold border border-white/[0.08] bg-white/[0.02] text-white/55 hover:text-rose-400 hover:border-rose-500/20 hover:bg-rose-500/5 transition-all disabled:opacity-50 cursor-pointer">
-                {twitterDisconnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2Off className="h-3.5 w-3.5" />}
-                {t('disconnectX')}
+                {facebookDisconnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2Off className="h-3.5 w-3.5" />}
+                Desconectar
               </button>
             ) : (
-              <a href="/api/twitter/connect"
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-black border border-white/10 hover:bg-white/5 hover:shadow-[0_0_16px_rgba(255,255,255,0.1)] transition-all text-center cursor-pointer">
-                <Link2 className="h-3.5 w-3.5" /> {t('connectX')}
+              <a href="/api/facebook/connect"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-[#1877F2] hover:bg-[#166FE5] transition-all text-center cursor-pointer">
+                <Link2 className="h-3.5 w-3.5" /> Conectar Página
               </a>
             ))}
-            <p className="text-[9px] text-white/30 leading-normal mt-1">{t('xRequirement')}</p>
+          </div>
+        </motion.div>
+
+        {/* Tile 8: Pinterest connection */}
+        <motion.div
+          whileHover={{ y: -2 }}
+          transition={spring}
+          className="md:col-span-1 bg-[#181b25]/40 border border-white/[0.08] hover:border-white/[0.14] rounded-3xl p-5 flex flex-col justify-between gap-4 relative overflow-hidden backdrop-blur-xl transition-all duration-300"
+        >
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#E60023]/[0.03] to-red-400/[0.03] pointer-events-none" />
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-xl bg-[#E60023]/10 border border-[#E60023]/20">
+                <svg className="h-5 w-5 text-[#E60023]" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.951-7.252 4.168 0 7.41 2.967 7.41 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.367 18.624 0 12.017 0z"/>
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-white">Pinterest</p>
+                <p className="text-[10.5px] text-white/45 truncate mt-0.5">
+                  {pinterestLoading ? t('verifying')
+                    : pinterestStatus?.connected ? `@${pinterestStatus.username}`
+                    : t('notConnected')}
+                </p>
+              </div>
+            </div>
+            {!pinterestLoading && pinterestStatus?.connected && (
+              <span className="flex items-center gap-1 text-[9px] font-extrabold uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full tracking-wider">
+                {t('active')}
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-2 pt-2">
+            {!pinterestLoading && (pinterestStatus?.connected ? (
+              <button onClick={async () => { setPinterestDisconnecting(true); await fetch('/api/pinterest/status', { method: 'DELETE' }); setPinterestStatus({ connected: false, username: null }); setPinterestDisconnecting(false); }}
+                disabled={pinterestDisconnecting}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold border border-white/[0.08] bg-white/[0.02] text-white/55 hover:text-rose-400 hover:border-rose-500/20 hover:bg-rose-500/5 transition-all disabled:opacity-50 cursor-pointer">
+                {pinterestDisconnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2Off className="h-3.5 w-3.5" />}
+                Desconectar
+              </button>
+            ) : (
+              <a href="/api/pinterest/connect"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-[#E60023] hover:bg-[#bd001c] transition-all text-center cursor-pointer">
+                <Link2 className="h-3.5 w-3.5" /> Conectar Pinterest
+              </a>
+            ))}
           </div>
         </motion.div>
       </div>
