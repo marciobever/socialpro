@@ -16,6 +16,7 @@ export interface Slide {
   imageUrl?: string;
   imagePrompt?: string;
   isGeneratingImage?: boolean;
+  imageError?: string;
   layoutTemplate?: 'default' | 'hook' | 'comparison' | 'mockup' | 'cta';
 }
 

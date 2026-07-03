@@ -188,6 +188,7 @@ CREATE TABLE IF NOT EXISTS scheduled_posts (
                  CHECK (status IN ('pending', 'published', 'failed', 'canceled')),
   published_at   TIMESTAMPTZ,
   error_message  TEXT,
+  notified_at    TIMESTAMPTZ,
   created_at     TIMESTAMPTZ DEFAULT NOW(),
   updated_at     TIMESTAMPTZ DEFAULT NOW()
 );

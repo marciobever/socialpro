@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
 
+// Meta wraps failures as { error: { message, error_user_msg, code, error_subcode, ... } }.
+// error_user_msg is already end-user-safe copy when Meta provides one (e.g. copyright takedowns).
+function extractMetaError(body: unknown): string {
+  const err = (body as { error?: { message?: string; error_user_msg?: string; code?: number } })?.error;
+  if (!err) return 'Erro desconhecido ao publicar.';
+  if (/copyright|direitos autorais/i.test(err.error_user_msg ?? err.message ?? '')) {
+    return 'Publicação recusada pelo Instagram por violação de direitos autorais (copyright) no conteúdo.';
+  }
+  return err.error_user_msg || err.message || 'Erro desconhecido ao publicar.';
+}
+
 // Vercel Cron Job — runs every 5 minutes via vercel.json
 // Only accessible with CRON_SECRET header for security
 export async function GET(request: Request) {
@@ -74,7 +85,7 @@ export async function GET(request: Request) {
             body: JSON.stringify({ image_url: imageUrl, is_carousel_item: true, access_token: token }),
           });
           const d = await res.json();
-          if (!d.id) throw new Error(`Container falhou: ${JSON.stringify(d)}`);
+          if (!d.id) throw new Error(extractMetaError(d));
           containerIds.push(d.id);
         }
 
@@ -95,14 +106,14 @@ export async function GET(request: Request) {
           body: JSON.stringify({ media_type: 'CAROUSEL', children: containerIds.join(','), caption: post.caption, access_token: token }),
         });
         const car = await carRes.json();
-        if (!car.id) throw new Error(`Carrossel falhou: ${JSON.stringify(car)}`);
+        if (!car.id) throw new Error(extractMetaError(car));
 
         const pubRes = await fetch(`${BASE}/${igId}/media_publish`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ creation_id: car.id, access_token: token }),
         });
         const pub = await pubRes.json();
-        if (!pub.id) throw new Error(`Publicação falhou: ${JSON.stringify(pub)}`);
+        if (!pub.id) throw new Error(extractMetaError(pub));
 
         // Update status to published
         await getSupabase().from('scheduled_posts').update({

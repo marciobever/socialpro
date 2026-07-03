@@ -376,6 +376,10 @@
     "pending": "Scheduled",
     "status_published": "Published"
   },
+  "notifications": {
+    "publishFailedTitle": "A scheduled post failed",
+    "publishFailedGeneric": "We couldn't publish to Instagram. Check the Calendar for details."
+  },
   "account": {
     "title": "My Account",
     "subtitle": "Plan, usage and billing information",

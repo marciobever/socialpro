@@ -9,7 +9,7 @@ import type { PlatformType, Slide, CarouselStyleModel } from '@/types';
 import {
   Zap, Check, Send, AlertTriangle, Info, Plus, Sliders, RefreshCw, Download, Clock, ChevronLeft
 } from 'lucide-react';
-import { toast, Toaster } from '@/components/Toast';
+import { toast } from '@/components/Toast';
 import { Modal, ConfirmDialog } from '@/components/Modal';
 import { GenerateWizard } from '@/components/GenerateWizard';
 import { CreationFlow } from '@/components/dashboard/CreationFlow';

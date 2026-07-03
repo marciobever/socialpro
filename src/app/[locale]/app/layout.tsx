@@ -4,6 +4,7 @@ import { usePathname, useRouter } from '@/i18n/navigation';
 import { Loader2 } from 'lucide-react';
 import { TopNav } from '@/components/TopNav';
 import { useAppContext } from '@/context/AppContext';
+import { FailedPostToasts } from '@/components/FailedPostToasts';
 
 const DEFAULT_NAMES = ['', 'Seu Nome', 'Meu perfil'];
 
@@ -49,6 +50,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-dark-bg text-dark-text overflow-x-hidden">
+      <FailedPostToasts />
       <div className="fixed inset-0 bg-grid-pattern grid-mask pointer-events-none -z-10 opacity-40" />
       <div className="fixed top-0 left-1/4 w-72 h-72 rounded-full bg-accent-purple/4 blur-[100px] pointer-events-none -z-10" />
       <div className="fixed bottom-0 right-1/4 w-72 h-72 rounded-full bg-accent-cyan/4 blur-[100px] pointer-events-none -z-10" />

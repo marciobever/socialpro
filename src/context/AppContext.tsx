@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
+import { toast } from '@/components/Toast';
 import type { PlatformType, ToneType, Slide, EditorialItem, CarouselStyleModel, WatermarkType } from '../types';
 
 interface SubscriptionState {
@@ -193,6 +194,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [upgradeReason, setUpgradeReason] = useState<'subscription_required' | 'usage_limit_reached' | null>(null);
   const currentCarouselIdRef = useRef<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const toastedSlideErrorsRef = useRef<Set<string>>(new Set());
   const [scheduledItems, setScheduledItems] = useState<EditorialItem[]>(INITIAL_CALENDAR_ITEMS);
   const [selectedItemId, setSelectedItemId] = useState<string>('c4');
 
@@ -252,9 +254,20 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     pollingRef.current = setInterval(async () => {
       polls++;
       // Stop after 3 min or if a new carousel replaced this one
-      if (polls > 90 || currentCarouselIdRef.current !== carouselId) {
+      if (polls > 90) {
         stopPolling();
-        setSlides(prev => prev.map(s => ({ ...s, isGeneratingImage: false })));
+        let stillPending = false;
+        setSlides(prev => prev.map(s => {
+          if (s.isGeneratingImage) stillPending = true;
+          return s.isGeneratingImage ? { ...s, isGeneratingImage: false, imageError: 'Tempo esgotado ao gerar a imagem.' } : s;
+        }));
+        if (stillPending) {
+          toast.error('Geração de imagem demorou demais', 'O serviço não respondeu a tempo. Tente gerar novamente.');
+        }
+        return;
+      }
+      if (currentCarouselIdRef.current !== carouselId) {
+        stopPolling();
         return;
       }
 
@@ -264,6 +277,14 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         const { carousel } = await res.json();
         const dbSlides: Slide[] = carousel?.slides ?? [];
 
+        // Toast each newly-failed slide once (Windmill wrote imageError to the DB row).
+        for (const db of dbSlides) {
+          if (db.imageError && db.id && !toastedSlideErrorsRef.current.has(db.id)) {
+            toastedSlideErrorsRef.current.add(db.id);
+            toast.error('Falha ao gerar imagem', db.imageError);
+          }
+        }
+
         setSlides(prev => {
           let changed = false;
           const next = prev.map(s => {
@@ -272,12 +293,19 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               changed = true;
               return { ...s, imageUrl: db.imageUrl, isGeneratingImage: false };
             }
+            if (db?.imageError && !s.imageError) {
+              changed = true;
+              return { ...s, imageError: db.imageError, isGeneratingImage: false };
+            }
             return s;
           });
           return changed ? next : prev;
         });
 
-        const allDone = slideIds.every(id => dbSlides.find(s => s.id === id)?.imageUrl);
+        const allDone = slideIds.every(id => {
+          const db = dbSlides.find(s => s.id === id);
+          return db?.imageUrl || db?.imageError;
+        });
         if (allDone) stopPolling();
       } catch { /* silent */ }
     }, 2000);
@@ -287,12 +315,13 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const generateSlideImagesDirect = useCallback(
     async (slidesToProcess: Slide[], style: CarouselStyleModel, handle: string, refImage: string) => {
       const BATCH = 2;
+      const failedMessages = new Set<string>();
       for (let i = 0; i < slidesToProcess.length; i += BATCH) {
         const chunk = slidesToProcess.slice(i, i + BATCH);
         await Promise.allSettled(
           chunk.map(async (slide) => {
             const prompt = buildImagePrompt(slide.title, slide.subtitle, slide.imagePrompt || '', style, handle);
-            setSlides(prev => prev.map(s => s.id === slide.id ? { ...s, isGeneratingImage: true } : s));
+            setSlides(prev => prev.map(s => s.id === slide.id ? { ...s, isGeneratingImage: true, imageError: undefined } : s));
             try {
               const resp = await fetch('/api/ai/image', {
                 method: 'POST',
@@ -303,12 +332,23 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                 const data = await resp.json();
                 setSlides(prev => prev.map(s => s.id === slide.id ? { ...s, imageUrl: data.imageUrl, isGeneratingImage: false } : s));
               } else {
-                setSlides(prev => prev.map(s => s.id === slide.id ? { ...s, isGeneratingImage: false } : s));
+                const errBody = await resp.json().catch(() => ({}));
+                const msg = errBody?.error || 'Falha ao gerar a imagem.';
+                failedMessages.add(msg);
+                setSlides(prev => prev.map(s => s.id === slide.id ? { ...s, isGeneratingImage: false, imageError: msg } : s));
               }
             } catch {
-              setSlides(prev => prev.map(s => s.id === slide.id ? { ...s, isGeneratingImage: false } : s));
+              const msg = 'Falha de conexão ao gerar a imagem.';
+              failedMessages.add(msg);
+              setSlides(prev => prev.map(s => s.id === slide.id ? { ...s, isGeneratingImage: false, imageError: msg } : s));
             }
           })
+        );
+      }
+      if (failedMessages.size > 0) {
+        toast.error(
+          failedMessages.size === 1 ? 'Falha ao gerar imagem' : `Falha ao gerar ${failedMessages.size} imagens`,
+          [...failedMessages].join(' ')
         );
       }
     },
@@ -365,6 +405,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setActiveSlideIndex(0);
       setIsGenerating(false);
     } catch {
+      toast.error('Falha ao gerar com IA', 'Não foi possível refinar o conteúdo. Tente novamente.');
       setIsGenerating(false);
     }
   };
@@ -443,7 +484,16 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ slides: slidePrompts, locale: 'pt' }),
-            }).catch(console.error);
+            }).then(async (r) => {
+              if (!r.ok) {
+                const errBody = await r.json().catch(() => ({}));
+                toast.error('Falha ao gerar imagens do carrossel', errBody?.error || 'Não foi possível enfileirar a geração de imagens.');
+                setSlides(prev => prev.map(s => ({ ...s, isGeneratingImage: false })));
+              }
+            }).catch(() => {
+              toast.error('Falha ao gerar imagens do carrossel', 'Erro de conexão ao enfileirar a geração.');
+              setSlides(prev => prev.map(s => ({ ...s, isGeneratingImage: false })));
+            });
             startPolling(carouselId, generated.map(s => s.id));
           }
         } else if (saveRes.status === 402) {
@@ -454,14 +504,17 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         } else if (saveRes.status === 503) {
           // Subscription service unavailable — still generate images directly
           console.warn('[carousel] subscription check unavailable, falling back to direct API');
+          toast.info('Verificação de assinatura indisponível', 'Gerando imagens mesmo assim, mas confira seu plano depois.');
           generateSlideImagesDirect(generated, lockedStyle, lockedHandle, lockedRef ?? '').catch(console.error);
         } else {
           // DB save failed — fallback to direct API
           console.warn('[carousel] save failed, falling back to direct API:', saveRes.status);
+          toast.info('Falha ao salvar o carrossel', 'Gerando as imagens mesmo assim, mas o carrossel pode não ficar salvo no histórico.');
           generateSlideImagesDirect(generated, lockedStyle, lockedHandle, lockedRef ?? '').catch(console.error);
         }
       }
     } catch {
+      toast.info('Não foi possível gerar com IA', 'Usamos um modelo padrão para o texto — as imagens ainda serão geradas.');
       // Local fallback
       const colors = [
         'linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #c084fc 100%)',
@@ -495,17 +548,24 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const carouselId = currentCarouselIdRef.current;
 
       setSlides((prev) =>
-        prev.map((s) => (s.id === slideId ? { ...s, isGeneratingImage: true, imageUrl: undefined } : s))
+        prev.map((s) => (s.id === slideId ? { ...s, isGeneratingImage: true, imageUrl: undefined, imageError: undefined } : s))
       );
 
       if (carouselId && !referenceImage) {
         // Route through Windmill — same pipeline as the initial generation
         const slideIndex = slides.findIndex(s => s.id === slideId);
-        fetch(`/api/carousels/${carouselId}/generate-images`, {
+        const enqueueRes = await fetch(`/api/carousels/${carouselId}/generate-images`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ slides: [{ slideIndex, prompt }] }),
-        }).catch(console.error);
+        }).catch(() => null);
+        if (!enqueueRes || !enqueueRes.ok) {
+          const errBody = await enqueueRes?.json().catch(() => ({})) ?? {};
+          const msg = errBody?.error || 'Falha ao enfileirar a geração da imagem.';
+          setSlides(prev => prev.map(s => s.id === slideId ? { ...s, isGeneratingImage: false, imageError: msg } : s));
+          toast.error('Falha ao gerar imagem', msg);
+          return;
+        }
         startPolling(carouselId, [slideId]);
         return;
       }
@@ -525,14 +585,19 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             )
           );
         } else {
+          const errBody = await resp.json().catch(() => ({}));
+          const msg = errBody?.error || 'Falha ao gerar a imagem.';
           setSlides((prev) =>
-            prev.map((s) => (s.id === slideId ? { ...s, isGeneratingImage: false } : s))
+            prev.map((s) => (s.id === slideId ? { ...s, isGeneratingImage: false, imageError: msg } : s))
           );
+          toast.error('Falha ao gerar imagem', msg);
         }
       } catch {
+        const msg = 'Falha de conexão ao gerar a imagem.';
         setSlides((prev) =>
-          prev.map((s) => (s.id === slideId ? { ...s, isGeneratingImage: false } : s))
+          prev.map((s) => (s.id === slideId ? { ...s, isGeneratingImage: false, imageError: msg } : s))
         );
+        toast.error('Falha ao gerar imagem', msg);
       }
     },
     [styleModel, brandKit.brandHandle, referenceImage, slides, startPolling]
@@ -561,7 +626,16 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slides: slidePrompts, locale: 'pt' }),
-    }).catch(console.error);
+    }).then(async (r) => {
+      if (!r.ok) {
+        const errBody = await r.json().catch(() => ({}));
+        toast.error('Falha ao gerar imagens', errBody?.error || 'Não foi possível enfileirar a geração.');
+        setSlides(prev => prev.map(s => ({ ...s, isGeneratingImage: false })));
+      }
+    }).catch(() => {
+      toast.error('Falha ao gerar imagens', 'Erro de conexão ao enfileirar a geração.');
+      setSlides(prev => prev.map(s => ({ ...s, isGeneratingImage: false })));
+    });
 
     startPolling(carouselId, slides.map(s => s.id));
   }, [styleModel, brandKit.brandHandle, referenceImage, slides, generateSlideImagesDirect, startPolling]);
@@ -578,9 +652,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (response.ok) {
         const data = await response.json();
         if (data?.refinedText) setContent(data.refinedText);
+      } else {
+        const errBody = await response.json().catch(() => ({}));
+        toast.error('Falha ao refinar legenda', errBody?.error || 'Tente novamente em instantes.');
       }
     } catch {
-      // silent
+      toast.error('Falha ao refinar legenda', 'Erro de conexão com o serviço de IA.');
     } finally {
       setIsGenerating(false);
     }
@@ -601,6 +678,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (data?.refinedText) { setContent(data.refinedText); return; }
       throw new Error('Resposta vazia.');
     } catch {
+      toast.info('Não foi possível gerar com IA', 'Usamos um modelo padrão de texto para este post.');
       const hooks: Record<ToneType, string> = {
         provocativo: `A verdade incômoda sobre ${carouselTopic}:`,
         autoridade: `3 lições práticas sobre ${carouselTopic} que poucos aplicam:`,

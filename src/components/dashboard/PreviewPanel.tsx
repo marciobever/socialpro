@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import { useAppContext } from '@/context/AppContext';
-import { ChevronLeft, ChevronRight, ImageIcon, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ImageIcon, Loader2, AlertTriangle } from 'lucide-react';
 import { SlideRenderer } from './SlideRenderer';
 
 interface PanelHeaderProps {
@@ -70,6 +70,13 @@ export function PreviewPanel() {
                   <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-black/55 backdrop-blur-[2px]">
                     <Loader2 className="h-6 w-6 text-accent-purple animate-spin" />
                     <span className="text-[10px] font-semibold text-white/70">Gerando imagem…</span>
+                  </div>
+                )}
+                {!previewSlide?.isGeneratingImage && previewSlide?.imageError && (
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 px-4 text-center bg-black/70 backdrop-blur-[2px]">
+                    <AlertTriangle className="h-6 w-6 text-rose-400" />
+                    <span className="text-[10px] font-semibold text-rose-300">Falha ao gerar imagem</span>
+                    <span className="text-[9px] text-white/60 leading-snug">{previewSlide.imageError}</span>
                   </div>
                 )}
                 {previewSlide?.imageUrl ? (

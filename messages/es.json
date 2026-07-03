@@ -376,6 +376,10 @@
     "pending": "Programado",
     "status_published": "Publicado"
   },
+  "notifications": {
+    "publishFailedTitle": "Una publicación programada falló",
+    "publishFailedGeneric": "No pudimos publicar en Instagram. Consulta el Calendario para más detalles."
+  },
   "account": {
     "title": "Mi Cuenta",
     "subtitle": "Plan, uso e información de facturación",

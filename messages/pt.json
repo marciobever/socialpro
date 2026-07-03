@@ -376,6 +376,10 @@
     "pending": "Agendado",
     "status_published": "Publicado"
   },
+  "notifications": {
+    "publishFailedTitle": "Uma publicação agendada falhou",
+    "publishFailedGeneric": "Não foi possível publicar no Instagram. Veja o Calendário para mais detalhes."
+  },
   "account": {
     "title": "Minha Conta",
     "subtitle": "Plano, uso e informações de pagamento",
