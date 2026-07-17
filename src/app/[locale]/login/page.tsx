@@ -19,14 +19,6 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-function FacebookIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="#1877F2">
-      <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
-    </svg>
-  );
-}
-
 const PLAN_INFO: Record<string, { name: string; price: string; color: string; features: string[] }> = {
   pro: {
     name: 'Pro Creator',
@@ -47,7 +39,6 @@ function LoginForm() {
   const [password, setPassword]         = useState('');
   const [loading, setLoading]           = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [fbLoading, setFbLoading]       = useState(false);
   const [error, setError]               = useState('');
 
   const router       = useRouter();
@@ -76,7 +67,6 @@ function LoginForm() {
   };
 
   const handleGoogleLogin  = async () => { setGoogleLoading(true);  await signIn('google',   { callbackUrl: '/app/dashboard' }); };
-  const handleFacebookLogin = async () => { setFbLoading(true);     await signIn('facebook', { callbackUrl: '/app/dashboard' }); };
 
   return (
     <div className="min-h-screen bg-dark-bg text-dark-text flex flex-col">
@@ -127,15 +117,10 @@ function LoginForm() {
 
             {/* OAuth */}
             <div className="space-y-2.5">
-              <button onClick={handleGoogleLogin} disabled={googleLoading || loading || fbLoading}
+              <button onClick={handleGoogleLogin} disabled={googleLoading || loading}
                 className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm font-semibold text-white transition-all disabled:opacity-50">
                 {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon className="h-4 w-4" />}
                 {t('continueWithGoogle')}
-              </button>
-              <button onClick={handleFacebookLogin} disabled={fbLoading || loading || googleLoading}
-                className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm font-semibold text-white transition-all disabled:opacity-50">
-                {fbLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FacebookIcon className="h-4 w-4" />}
-                {t('continueWithFacebook')}
               </button>
             </div>
 
@@ -167,7 +152,7 @@ function LoginForm() {
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)}
                   className="interactive-input" placeholder={t('passwordPlaceholder')} disabled={loading} />
               </div>
-              <button type="submit" disabled={loading || googleLoading || fbLoading}
+              <button type="submit" disabled={loading || googleLoading}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-accent-purple to-accent-cyan shadow-[0_0_16px_rgba(139,92,246,0.3)] hover:shadow-[0_0_24px_rgba(139,92,246,0.5)] transition-all disabled:opacity-50">
                 {loading
                   ? <><Loader2 className="h-4 w-4 animate-spin" />{t('signingIn')}</>
