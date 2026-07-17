@@ -17,7 +17,6 @@ export async function GET(req: Request) {
 
   const redirectUri = `${baseUrl}/api/facebook/callback`;
   const scopes = [
-    "pages_read_engagement",
     "pages_show_list",
     "pages_manage_posts",
   ].join(",");

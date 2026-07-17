@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useAppContext } from '@/context/AppContext';
+import { toast } from '@/components/Toast';
 import { motion } from 'framer-motion';
 import {
   UserCircle, CreditCard, Zap, CheckCircle2, AlertCircle,
@@ -76,7 +77,6 @@ export default function AccountPage() {
   const [metaStatus,       setMetaStatus]       = useState<MetaStatus | null>(null);
   const [metaLoading,      setMetaLoading]      = useState(true);
   const [disconnecting,    setDisconnecting]    = useState(false);
-  const [metaError,        setMetaError]        = useState('');
   const [showAccountList,  setShowAccountList]  = useState(false);
   const [switchingAccount, setSwitchingAccount] = useState(false);
 
@@ -126,21 +126,34 @@ export default function AccountPage() {
 
   useEffect(() => {
     // Handle OAuth callback params
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('meta_error')) {
+    const params        = new URLSearchParams(window.location.search);
+    const metaErrorCode = params.get('meta_error');
+    const justConnected = params.get('meta_connected');
+    if (metaErrorCode || justConnected) window.history.replaceState({}, '', '/app/account');
+
+    if (metaErrorCode) {
       const msgs: Record<string, string> = {
-        denied: 'Permissão negada.', invalid_state: 'Sessão expirada. Tente novamente.',
-        token_exchange: 'Erro ao obter token.', server_error: 'Erro interno.',
-        missing_config: 'App não configurado.',
+        denied: 'Você negou a permissão no Facebook. Tente novamente e aceite o acesso à Página e ao Instagram.',
+        invalid_state: 'Sessão de conexão expirada. Clique em "Conectar Instagram" de novo.',
+        token_exchange: 'O Facebook não retornou um token válido. Tente novamente.',
+        server_error: 'Erro interno ao salvar a conexão. Tente novamente em instantes.',
+        missing_config: 'App do Meta não configurado no servidor.',
       };
-      setMetaError(msgs[params.get('meta_error')!] ?? 'Erro desconhecido.');
-      window.history.replaceState({}, '', '/app/account');
+      toast.error('Falha ao conectar Instagram', msgs[metaErrorCode] ?? 'Erro desconhecido.');
     }
-    if (params.get('meta_connected')) window.history.replaceState({}, '', '/app/account');
 
     // Load connection status — all platforms in parallel
     fetch('/api/meta/status')
-      .then(r => r.json()).then((d: MetaStatus) => setMetaStatus(d))
+      .then(r => r.json())
+      .then((d: MetaStatus) => {
+        setMetaStatus(d);
+        if (justConnected && d.connected) {
+          toast.success(
+            'Instagram conectado com sucesso',
+            `@${d.instagramName} — via Página "${d.pageName}"`,
+          );
+        }
+      })
       .catch(() => setMetaStatus({ connected: false, instagramId: null, instagramName: null, pageName: null }))
       .finally(() => setMetaLoading(false));
 
@@ -164,6 +177,7 @@ export default function AccountPage() {
     setDisconnecting(true);
     await fetch('/api/meta/status', { method: 'DELETE' });
     setMetaStatus({ connected: false, instagramId: null, instagramName: null, pageName: null });
+    toast.info('Instagram desconectado');
     setDisconnecting(false);
   };
 
@@ -181,6 +195,9 @@ export default function AccountPage() {
         instagramName: account.instagram_username,
         pageName: account.facebook_page_name,
       } : prev);
+      toast.success('Conta ativa alterada', `Agora publicando em @${account.instagram_username}`);
+    } else {
+      toast.error('Não foi possível trocar de conta', 'Tente novamente em instantes.');
     }
     setSwitchingAccount(false);
   };
