@@ -127,10 +127,15 @@ function LoginForm() {
 
             {/* OAuth */}
             <div className="space-y-2.5">
-              <button onClick={handleGoogleLogin} disabled={googleLoading || loading}
+              <button onClick={handleGoogleLogin} disabled={googleLoading || loading || fbLoading}
                 className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm font-semibold text-white transition-all disabled:opacity-50">
                 {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon className="h-4 w-4" />}
                 {t('continueWithGoogle')}
+              </button>
+              <button onClick={handleFacebookLogin} disabled={fbLoading || loading || googleLoading}
+                className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm font-semibold text-white transition-all disabled:opacity-50">
+                {fbLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FacebookIcon className="h-4 w-4" />}
+                {t('continueWithFacebook')}
               </button>
             </div>
 
