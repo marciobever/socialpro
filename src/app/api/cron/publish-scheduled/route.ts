@@ -108,6 +108,15 @@ export async function GET(request: Request) {
         const car = await carRes.json();
         if (!car.id) throw new Error(extractMetaError(car));
 
+        // The carousel (parent) container also needs processing time, not just its children.
+        for (let i = 0; i < 10; i++) {
+          await new Promise(r => setTimeout(r, 3000));
+          const r = await fetch(`${BASE}/${car.id}?fields=status_code&access_token=${token}`);
+          const d = await r.json();
+          if (d.status_code === 'FINISHED') break;
+          if (d.status_code === 'ERROR') throw new Error(`Container do carrossel ${car.id} falhou`);
+        }
+
         const pubRes = await fetch(`${BASE}/${igId}/media_publish`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ creation_id: car.id, access_token: token }),

@@ -134,6 +134,9 @@ export async function POST(req: NextRequest) {
       throw new Error(`Falha ao criar carrossel: ${JSON.stringify(carousel)}`);
     }
 
+    // The carousel (parent) container also needs processing time, not just its children.
+    await waitForContainer(carousel.id);
+
     // 4. Publish carousel
     const publishRes = await fetch(`${BASE}/${igId}/media_publish`, {
       method: "POST",
