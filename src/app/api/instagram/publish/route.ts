@@ -9,6 +9,17 @@ interface SlidePayload {
   subtitle: string;
 }
 
+// Meta wraps failures as { error: { message, error_user_msg, code, error_subcode, ... } }.
+// Never surface the raw JSON to the user — extract the human-readable part.
+function extractMetaError(body: unknown): string {
+  const err = (body as { error?: { message?: string; error_user_msg?: string } })?.error;
+  if (!err) return "Erro desconhecido ao publicar.";
+  if (/copyright|direitos autorais/i.test(err.error_user_msg ?? err.message ?? "")) {
+    return "Publicação recusada pelo Instagram por violação de direitos autorais (copyright) no conteúdo.";
+  }
+  return err.error_user_msg || err.message || "Erro desconhecido ao publicar.";
+}
+
 async function uploadImageToStorage(
   userId: string,
   index: number,
@@ -111,7 +122,7 @@ export async function POST(req: NextRequest) {
         }),
       });
       const data = await res.json();
-      if (!data.id) throw new Error(`Falha ao criar container: ${JSON.stringify(data)}`);
+      if (!data.id) throw new Error(extractMetaError(data));
       containerIds.push(data.id);
     }
 
@@ -131,7 +142,7 @@ export async function POST(req: NextRequest) {
     });
     const carousel = await carouselRes.json();
     if (!carousel.id) {
-      throw new Error(`Falha ao criar carrossel: ${JSON.stringify(carousel)}`);
+      throw new Error(extractMetaError(carousel));
     }
 
     // The carousel (parent) container also needs processing time, not just its children.
@@ -145,7 +156,7 @@ export async function POST(req: NextRequest) {
     });
     const published = await publishRes.json();
     if (!published.id) {
-      throw new Error(`Falha ao publicar: ${JSON.stringify(published)}`);
+      throw new Error(extractMetaError(published));
     }
 
     // 5. Get permalink

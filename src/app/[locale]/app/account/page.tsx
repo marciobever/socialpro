@@ -573,7 +573,7 @@ export default function AccountPage() {
               </button>
             ) : (
               <a href="/api/meta/connect"
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:shadow-[0_0_16px_rgba(236,72,153,0.3)] transition-all text-center cursor-pointer">
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:shadow-[0_0_16px_rgba(236,72,153,0.3)] active:scale-[0.96] transition-all text-center cursor-pointer">
                 <Link2 className="h-3.5 w-3.5" /> {t('connectIg')}
               </a>
             ))}
@@ -622,7 +622,7 @@ export default function AccountPage() {
               </button>
             ) : (
               <a href="/api/linkedin/connect"
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-[#0077b5] hover:bg-[#006097] hover:shadow-[0_0_16px_rgba(0,119,181,0.3)] transition-all text-center cursor-pointer">
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-[#0077b5] hover:bg-[#006097] hover:shadow-[0_0_16px_rgba(0,119,181,0.3)] active:scale-[0.96] transition-all text-center cursor-pointer">
                 <Link2 className="h-3.5 w-3.5" /> {t('connectLinkedin')}
               </a>
             ))}
@@ -671,7 +671,7 @@ export default function AccountPage() {
               </button>
             ) : (
               <a href="/api/facebook/connect"
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-[#1877F2] hover:bg-[#166FE5] transition-all text-center cursor-pointer">
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-[#1877F2] hover:bg-[#166FE5] active:scale-[0.96] transition-all text-center cursor-pointer">
                 <Link2 className="h-3.5 w-3.5" /> Conectar Página
               </a>
             ))}
@@ -719,7 +719,7 @@ export default function AccountPage() {
               </button>
             ) : (
               <a href="/api/pinterest/connect"
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-[#E60023] hover:bg-[#bd001c] transition-all text-center cursor-pointer">
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-[#E60023] hover:bg-[#bd001c] active:scale-[0.96] transition-all text-center cursor-pointer">
                 <Link2 className="h-3.5 w-3.5" /> Conectar Pinterest
               </a>
             ))}
